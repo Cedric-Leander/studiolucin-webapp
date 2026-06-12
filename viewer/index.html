@@ -1,0 +1,828 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Studio Lucin</title>
+
+  <style>
+    /* ── Fonts ──────────────────────────────────────────────── */
+    @font-face { font-family:"KMRWaldenburg"; src:url("../assets/KMRWaldenburg-Regular.ttf") format("truetype"); font-weight:400; font-style:normal; font-display:swap; }
+    @font-face { font-family:"KMRWaldenburg"; src:url("../assets/KMRWaldenburg-Medium.ttf") format("truetype"); font-weight:500; font-style:normal; font-display:swap; }
+    @font-face { font-family:"KMRWaldenburg"; src:url("../assets/KMRWaldenburg-Light.ttf") format("truetype"); font-weight:300; font-style:normal; font-display:swap; }
+    @font-face { font-family:"KMRWaldenburg Extended"; src:url("../assets/KMRWaldenburgExtended-Medium.ttf") format("truetype"); font-weight:500; font-style:normal; font-display:swap; }
+    @font-face { font-family:"JaneAust"; src:url("../assets/JaneAust.ttf") format("truetype"); font-weight:400; font-style:normal; font-display:swap; }
+
+    /* ── Tokens ─────────────────────────────────────────────── */
+    :root {
+      --bg:           #0a0b10;
+      --surface:      #10121a;
+      --inset:        #080a10;
+      --ink:          #f2f6ff;
+      --muted:        rgba(215,239,255,0.55);
+      --faint:        rgba(215,239,255,0.32);
+      --line:         rgba(215,239,255,0.10);
+      --line-mid:     rgba(215,239,255,0.14);
+      --line-strong:  rgba(215,239,255,0.28);
+      --accent:       #d7efff;
+      --accent-ink:   #0a0b10;
+      --logo-color:   #f2f6ff;
+      --radius:       0;
+      --maxw:         1500px;
+      --font:         "KMRWaldenburg", system-ui, -apple-system, sans-serif;
+      --font-display: "KMRWaldenburg Extended", "KMRWaldenburg", system-ui, sans-serif;
+    }
+
+    /* ── Reset ──────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { margin: 0; height: 100%; }
+    body {
+      font-family: var(--font);
+      color: var(--ink);
+      background: var(--bg);
+      -webkit-font-smoothing: antialiased;
+      text-rendering: optimizeLegibility;
+    }
+
+    /* ── App shell ──────────────────────────────────────────── */
+    .app { display: flex; flex-direction: column; height: 100dvh; }
+
+    /* ── Header ─────────────────────────────────────────────── */
+    .bar {
+      flex: 0 0 auto;
+      display: flex; flex-direction: row; align-items: center; justify-content: space-between;
+      gap: clamp(14px, 2vw, 24px);
+      padding: 18px clamp(16px, 3vw, 28px) 14px;
+      border-bottom: 1px solid var(--line);
+    }
+    .brand { display: flex; align-items: center; justify-content: flex-start; min-width: 0; width: auto; flex: 0 1 300px; }
+    .logo { height: 22px; width: auto; max-width: min(280px, 34vw); display: block; flex: 0 1 auto; }
+    .logo path { fill: var(--logo-color, #f2f6ff); }
+    .tab-nav { display: flex; align-items: center; justify-content: flex-end; gap: 8px; flex-wrap: nowrap; width: auto; margin-left: auto; }
+    .tab-btn {
+      min-height: 38px;
+      display: inline-flex; align-items: center; justify-content: center;
+      border: 1px solid var(--line); background: transparent;
+      color: var(--muted); text-decoration: none;
+      font: inherit; font-size: 12px; letter-spacing: .08em; text-transform: uppercase;
+      padding: 10px 13px; white-space: nowrap; cursor: pointer;
+      transition: border-color .16s ease, color .16s ease, background .16s ease;
+    }
+    .tab-btn:hover { border-color: var(--line-strong); color: var(--ink); background: color-mix(in oklab, var(--ink) 5%, transparent); }
+    .tab-btn[aria-selected="true"] { border-color: var(--accent); color: var(--accent); }
+
+    /* ── View containers ────────────────────────────────────── */
+    #pdf-view  { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
+    #rechner-view { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
+    [hidden] { display: none !important; }
+
+    /* ════════════════════════════════════════════════════════
+       PDF VIEWER
+       ════════════════════════════════════════════════════════ */
+    .stage-wrap {
+      flex: 1 1 auto; min-height: 0;
+      position: relative;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      padding: clamp(14px, 2.4vw, 32px);
+    }
+    .stage {
+      position: relative;
+      display: flex; align-items: center; justify-content: center;
+      padding: 0;
+      background: transparent;
+      max-width: 100%; max-height: 100%;
+      min-width: min(420px, 86vw);
+      min-height: clamp(240px, 46vh, 380px);
+      overflow: hidden;
+    }
+    .stage.loaded { min-width: 0; min-height: 0; }
+    .stage.drag { outline: 2px dashed var(--accent); outline-offset: -10px; }
+    canvas {
+      display: block; max-width: 100%; max-height: 100%;
+      background: var(--bg);
+      box-shadow: 0 10px 50px rgba(0,0,0,.55);
+      opacity: 0; transition: opacity .18s ease;
+    }
+    canvas.ready { opacity: 1; }
+
+    .overlay {
+      position: absolute; inset: 0;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 14px; text-align: center; padding: 24px;
+      background: var(--surface);
+    }
+    .overlay[hidden] { display: none; }
+    .overlay p { margin: 0; color: var(--muted); max-width: 36ch; line-height: 1.5; }
+    .pick {
+      border: 1px solid var(--accent); background: var(--accent); color: var(--accent-ink);
+      font: inherit; font-weight: 500; padding: 10px 18px; border-radius: var(--radius); cursor: pointer;
+    }
+    .spinner {
+      width: 26px; height: 26px; border-radius: 50%;
+      border: 2.5px solid var(--line); border-top-color: var(--accent);
+      animation: spin .8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    #download {
+      position: absolute; top: 16px; right: 16px; z-index: 5;
+      display: flex; align-items: center; justify-content: center;
+      width: 38px; height: 38px;
+      border: 1px solid var(--line); background: transparent;
+      color: var(--ink); text-decoration: none;
+      opacity: 0.45; transition: opacity .2s ease, border-color .15s ease;
+    }
+    #download:hover { opacity: 1; border-color: var(--line-strong); }
+    #download svg { width: 18px; height: 18px; }
+    #download[hidden] { display: none !important; }
+
+    .controls {
+      flex: 0 0 auto;
+      display: flex; align-items: center; gap: clamp(10px, 2vw, 20px);
+      width: 100%; max-width: var(--maxw); margin: 0 auto;
+      padding: 0 clamp(16px, 3vw, 32px) 12px;
+    }
+    .nav-btn {
+      flex: 0 0 auto;
+      font: inherit; font-weight: 500; cursor: pointer;
+      padding: 10px 16px; border-radius: var(--radius); border: 1px solid transparent;
+      background: var(--accent); color: var(--accent-ink);
+      transition: opacity .15s ease, transform .05s ease;
+    }
+    .nav-btn:active { transform: translateY(1px); }
+    .nav-btn:disabled { opacity: .3; cursor: default; }
+    .nav-btn.ghost { background: transparent; color: var(--ink); border-color: var(--line); }
+    .nav-btn.ghost:hover:not(:disabled) { border-color: var(--line-strong); }
+    .track-area { flex: 1 1 auto; display: flex; align-items: center; gap: 12px; min-width: 0; }
+    .counter { font-family: var(--font-display); font-variant-numeric: tabular-nums; font-size: 13px; letter-spacing: 0.02em; color: var(--muted); min-width: 4.5em; }
+    .track { flex: 1 1 auto; height: 6px; border-radius: var(--radius); background: var(--line); overflow: hidden; }
+    .track > span { display: block; height: 100%; width: 0; background: var(--accent); transition: width .35s ease; }
+    .hint { flex: 0 0 auto; text-align: center; font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted); opacity: .8; padding-bottom: 12px; }
+
+    /* ════════════════════════════════════════════════════════
+       HONORARRECHNER
+       ════════════════════════════════════════════════════════ */
+    .content-wrap { flex: 1 1 auto; min-height: 0; display: flex; align-items: center; justify-content: center; padding: 24px 16px; overflow-y: auto; }
+    .card {
+      width: 100%; max-width: 420px;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      padding: 44px 48px 40px;
+      position: relative;
+    }
+    .card-info-button {
+      position: absolute; top: 18px; right: 18px;
+      width: 34px; height: 34px; display: grid; place-items: center;
+      border: none; background: transparent;
+      color: var(--faint); font: 500 13px/1 var(--font-display); cursor: pointer;
+      transition: color .16s ease;
+    }
+    .card-info-button:hover, .card-info-button:focus-visible { color: rgba(215,239,255,.82); }
+    .card-info-button svg { width: 15px; height: 15px; }
+    .card-header { margin-bottom: 36px; }
+    .card-title {
+      font-family: var(--font-display); font-weight: 500;
+      font-size: clamp(20px, 3.5vw, 26px);
+      letter-spacing: -0.025em; line-height: 1.05; color: var(--ink);
+    }
+    .divider { height: 1px; background: var(--line); margin: 0 0 32px; }
+    .field-label { font-size: 12px; font-weight: 500; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); margin-bottom: 12px; }
+    .input-row {
+      display: flex; align-items: stretch;
+      border: 1px solid var(--line-mid);
+      transition: border-color 180ms ease;
+    }
+    .input-row:focus-within { border-color: var(--line-strong); }
+    .budget-input {
+      flex: 1; background: var(--inset); border: none; outline: none;
+      font-family: var(--font-display); font-weight: 500; font-size: 18px;
+      letter-spacing: -0.02em; color: var(--ink);
+      padding: 14px 16px; caret-color: var(--accent); width: 0;
+    }
+    .budget-input::placeholder { color: var(--faint); }
+    .budget-input::-webkit-outer-spin-button,
+    .budget-input::-webkit-inner-spin-button { -webkit-appearance: none; }
+    .budget-input[type=number] { -moz-appearance: textfield; }
+    .input-unit {
+      display: flex; align-items: center; padding: 0 14px;
+      background: var(--inset); border-left: 1px solid var(--line);
+      font-size: 12px; font-weight: 500; letter-spacing: 0.08em;
+      color: var(--faint); white-space: nowrap; user-select: none;
+    }
+    .error-msg {
+      font-size: 12px; color: rgba(181,55,31,0.85);
+      letter-spacing: 0.04em; margin-top: 6px;
+      height: 0; overflow: hidden; opacity: 0; transition: opacity 180ms ease;
+    }
+    .error-msg.visible { opacity: 1; height: auto; }
+    .formula-line {
+      margin-top: 12px; font-family: var(--font); font-size: 13px;
+      font-weight: 300; letter-spacing: 0.04em; color: var(--faint);
+      min-height: 18px; transition: opacity 200ms ease;
+    }
+    .formula-line strong { font-weight: 400; }
+    .formula-line.dim { opacity: 0.2; }
+    .result-section { margin-top: 32px; padding-top: 32px; border-top: 1px solid var(--line); }
+    .result-pct {
+      font-family: var(--font-display); font-weight: 500;
+      font-size: clamp(32px, 6vw, 44px);
+      letter-spacing: -0.035em; line-height: 1; color: var(--ink);
+      transition: opacity 200ms ease; margin-top: 10px;
+    }
+    .result-pct.dim { opacity: 0.18; }
+    .result-fee {
+      margin-top: 10px; font-family: var(--font); font-size: 16px;
+      font-weight: 400; color: var(--muted); letter-spacing: 0.01em;
+      min-height: 20px; transition: opacity 200ms ease;
+    }
+    .result-fee.dim { opacity: 0; }
+
+    /* Rechner intro modal */
+    .modal { position: fixed; inset: 0; display: grid; place-items: center; padding: 22px; background: rgba(5,6,10,.72); backdrop-filter: blur(10px); z-index: 50; }
+    .modal[hidden] { display: none; }
+    .dialog { width: min(560px, 100%); background: var(--surface); box-shadow: 0 24px 90px rgba(0,0,0,.48); padding: 30px; }
+    .dialog h2 { font-family: var(--font-display); font-size: 28px; line-height: 1.05; letter-spacing: -.03em; margin-bottom: 16px; }
+    .dialog p { color: var(--muted); line-height: 1.55; margin-bottom: 16px; }
+    .dialog-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 24px; }
+    .btn { min-height: 44px; border: 1px solid var(--line); background: transparent; color: var(--ink); font: inherit; padding: 12px 16px; cursor: pointer; text-decoration: none; }
+    .btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); font-weight: 500; }
+
+    /* ── Focus ──────────────────────────────────────────────── */
+    :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+    /* ── Responsive ─────────────────────────────────────────── */
+    @media (max-width: 760px) {
+      .bar { flex-direction: column; justify-content: center; gap: 18px; }
+      .brand { justify-content: center; width: 100%; flex: none; }
+      .logo { height: 20px; max-width: min(300px, 72vw); }
+      .tab-nav { justify-content: center; width: 100%; margin-left: 0; flex-wrap: nowrap; }
+      .tab-btn { flex: 1 1 0; min-width: 0; font-size: 11px; padding: 8px 6px; letter-spacing: .06em; }
+      .nav-btn .full { display: none; }
+      .hint { display: none; }
+      .card { padding: 34px 28px 32px; }
+      .card-info-button { top: 14px; right: 14px; }
+    }
+    @media print { .bar, .controls, .hint { display: none !important; } }
+    @media (prefers-reduced-motion: reduce) {
+      canvas, .track > span { transition: none; }
+      .spinner { animation: none; }
+    }
+  </style>
+</head>
+<body>
+<div class="app">
+
+  <!-- ── Header mit Tab-Navigation ─────────────────────────── -->
+  <header class="bar" aria-label="Studio Lucin Navigation">
+    <a class="brand" href="https://www.studiolucin.de/" target="_blank" rel="noopener noreferrer" aria-label="Studio Lucin Website">
+      <svg class="logo" viewBox="0 0 1058.812 138.706" role="img" aria-label="Studio Lucin" xmlns="http://www.w3.org/2000/svg">
+        <path class="cls-1" d="M448.074,85.857c0-31.895,17.802-51.737,48.027-51.737,30.225,0,47.843,19.841,47.843,51.737s-17.618,51.922-47.843,51.922c-30.225,0-48.027-20.027-48.027-51.922ZM526.142,85.857c0-22.252-10.199-37.829-30.041-37.829-19.842,0-30.225,15.577-30.225,37.829,0,22.252,10.383,38.015,30.225,38.015s30.041-15.762,30.041-38.015Z"/>
+        <path class="cls-1" d="M82.888,39.127c-1.853-15.205-13.35-24.292-31.152-24.292-19.287,0-31.339,8.53-31.339,22.067,0,12.054,10.941,17.431,27.258,20.769l14.464,2.967c24.107,5.007,42.093,10.941,42.093,39.683,0,23.551-23.736,38.386-52.105,38.386-32.269,0-51.552-13.908-52.108-43.021h18.541c.743,19.47,13.724,28.186,33.566,28.186,19.468,0,33.192-8.716,33.376-22.624.187-15.947-11.31-19.656-30.409-23.55l-14.467-2.967C17.243,69.91,1.853,60.452,1.853,38.2,1.853,15.391,24.291,0,51.736,0c25.96,0,47.656,11.868,49.696,39.127h-18.544Z"/>
+        <path class="cls-1" d="M173.446,50.253h-19.655s0,62.678,0,62.678c0,5.934,1.853,8.715,7.416,8.715h11.313s0,13.908,0,13.908h-14.464c-13.908,0-21.883-3.894-21.883-21.139V50.253s-15.946,0-15.946,0v-13.908s15.946,0,15.946,0V12.424s17.618,0,17.618,0v23.921s19.655,0,19.655,0v13.908Z"/>
+        <path class="cls-1" d="M277.973,120.348l.371,15.205h-17.802s-.371-15.205-.371-15.205h-.555c-3.525,8.344-14.651,17.431-31.339,17.431-21.327,0-34.493-13.166-34.493-35.789V36.345s17.802,0,17.802,0v63.604c0,15.391,7.419,23.921,21.327,23.921,16.688,0,27.258-12.61,27.258-30.226v-57.3s17.802,0,17.802,0v84.003Z"/>
+        <path class="cls-1" d="M341.332,34.12c13.724,0,25.776,7.232,30.784,14.464h.184V3.152s17.802,0,17.802,0v108.295s.558,24.106.558,24.106h-17.802s-.558-14.093-.558-14.093h-.184c-3.894,8.715-16.133,16.318-31.523,16.318-27.074,0-44.692-19.1-44.692-51.922,0-35.048,20.956-51.737,45.431-51.737ZM344.115,48.028c-19.1,0-30.412,15.762-30.412,37.829,0,22.067,11.313,38.015,30.412,38.015,19.1,0,30.041-15.948,30.041-38.015,0-22.067-10.941-37.829-30.041-37.829Z"/>
+        <path class="cls-1" d="M413.224,22.067V3.152s19.287,0,19.287,0v18.914s-19.287,0-19.287,0ZM413.491,135.554V36.345s17.802,0,17.802,0v99.208s-17.802,0-17.802,0Z"/>
+        <path class="cls-1" d="M639.826,119.791h62.307s0,15.762,0,15.762h-80.848s0-132.401,0-132.401h18.541s0,116.639,0,116.639Z"/>
+        <path class="cls-1" d="M801.284,120.348l.371,15.205h-17.802s-.371-15.205-.371-15.205h-.555c-3.522,8.344-14.651,17.431-31.339,17.431-21.324,0-34.49-13.166-34.49-35.789V36.345s17.802,0,17.802,0v63.604c0,15.391,7.416,23.921,21.324,23.921,16.688,0,27.258-12.61,27.258-30.226v-57.3s17.802,0,17.802,0v84.003Z"/>
+        <path class="cls-1" d="M820.374,85.857c0-31.895,17.618-51.737,48.585-51.737,25.96,0,41.722,13.908,43.02,32.266h-17.802c-2.224-11.682-12.052-18.358-25.218-18.358-20.769,0-30.784,15.577-30.784,37.829s10.015,38.015,30.784,38.015c12.795,0,23.736-5.934,25.96-19.285h17.802c-3.338,22.067-21.695,33.193-43.762,33.193-30.968,0-48.585-20.027-48.585-51.922Z"/>
+        <path class="cls-1" d="M931.529,22.066V3.152s19.284,0,19.284,0v18.914s-19.284,0-19.284,0ZM932.272,135.553V36.345s17.802,0,17.802,0v99.208s-17.802,0-17.802,0Z"/>
+        <path class="cls-1" d="M1058.812,70.094v65.459s-17.802,0-17.802,0v-63.604c0-15.391-8.53-23.921-22.438-23.921-16.688,0-27.258,12.61-27.258,30.226v57.3s-17.802,0-17.802,0V51.551s-.371-15.205-.371-15.205h17.802s.371,15.205.371,15.205h.555c3.522-8.344,14.651-17.431,31.339-17.431,21.324,0,35.604,13.351,35.604,35.974Z"/>
+      </svg>
+    </a>
+    <nav class="tab-nav" role="tablist" aria-label="Bereiche">
+      <button class="tab-btn" role="tab" id="tab-profil"    data-tab="profil"    aria-selected="true">Profil</button>
+      <button class="tab-btn" role="tab" id="tab-portfolio" data-tab="portfolio" aria-selected="false">Portfolio</button>
+      <button class="tab-btn" role="tab" id="tab-rechner"   data-tab="rechner"   aria-selected="false">Rechner</button>
+    </nav>
+  </header>
+
+  <!-- ══ PDF-Viewer (Profil & Portfolio) ═══════════════════════ -->
+  <div id="pdf-view" role="tabpanel">
+    <main class="stage-wrap">
+      <a id="download" title="PDF herunterladen" hidden>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 11l5 4 5-4M5 21h14"/></svg>
+      </a>
+      <div class="stage" id="stage">
+        <canvas id="canvas"></canvas>
+        <div class="overlay" id="overlay">
+          <div class="spinner" id="spinner" hidden></div>
+          <p id="overlayText">Wird geladen …</p>
+          <button class="pick" id="pick" hidden>PDF wählen</button>
+        </div>
+      </div>
+    </main>
+    <footer class="controls" aria-label="Seitennavigation">
+      <button class="nav-btn ghost" id="prev" disabled>← <span class="full">Zurück</span></button>
+      <div class="track-area">
+        <span class="counter" id="counter" aria-live="polite">– / –</span>
+        <div class="track" role="progressbar"><span id="bar"></span></div>
+      </div>
+      <button class="nav-btn" id="next" disabled><span class="full">Weiter</span> →</button>
+    </footer>
+    <div class="hint" aria-hidden="true">← → blättern</div>
+  </div>
+  <input type="file" id="file" accept="application/pdf" hidden />
+
+  <!-- ══ Honorarrechner ════════════════════════════════════════ -->
+  <div id="rechner-view" role="tabpanel" hidden>
+    <div class="content-wrap">
+      <main class="card" role="main">
+        <button class="card-info-button" type="button" id="openIntro" aria-label="Info zum Honorarrechner">
+          <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5"/><path d="M12 8h.01"/></svg>
+        </button>
+        <header class="card-header">
+          <h1 class="card-title">Honorarrechner</h1>
+        </header>
+        <div class="divider" role="separator"></div>
+        <section aria-label="Eingabe">
+          <p class="field-label">Projektbudget</p>
+          <div class="input-row">
+            <input class="budget-input" id="budget" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" value="400" aria-label="Projektbudget in Millionen Euro">
+            <span class="input-unit" aria-hidden="true">Mio. €</span>
+          </div>
+          <p class="error-msg" id="error" role="alert" aria-live="polite">
+            Bitte ein Projektbudget größer als 0 eingeben.
+          </p>
+          <p class="formula-line" id="formula-box"></p>
+        </section>
+        <section class="result-section" aria-label="Ergebnis">
+          <p class="field-label">Honorar</p>
+          <p class="result-pct" id="result-pct" aria-live="polite">—</p>
+          <p class="result-fee" id="result-fee"></p>
+        </section>
+      </main>
+    </div>
+    <div class="modal" id="introModal" role="dialog" aria-modal="true" aria-labelledby="introTitle" hidden>
+      <div class="dialog">
+        <h2 id="introTitle">So funktioniert der Honorarrechner</h2>
+        <p>Jedes Honorar geht von einer festen Basis von <strong>12.000&nbsp;€</strong> aus und wächst degressiv mit Ihrem Projektbudget.</p>
+        <p>Je größer das Projekt, desto geringer ist der prozentuale Anteil am gesamten Projektvolumen.</p>
+        <div class="dialog-actions">
+          <button class="btn primary" type="button" id="closeIntro">Verstanden</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /.app -->
+
+<script type="module">
+/* ======================================================================
+   KONFIGURATION
+   ====================================================================== */
+const TABS_CONFIG = {
+  profil: {
+    pdfUrl:       '/profil/profil.pdf',
+    title:        'Unternehmensprofil',
+    downloadName: 'studio-lucin-profil.pdf',
+  },
+  portfolio: {
+    pdfUrl:       '/portfolio/portfolio.pdf',
+    title:        'Portfolio',
+    downloadName: 'studio-lucin-portfolio.pdf',
+  },
+  rechner: {
+    title: 'Honorarrechner',
+  },
+};
+
+const CDNS = [
+  { lib:    'https://cdn.jsdelivr.net/npm/pdfjs-dist@4.8.69/build/pdf.min.mjs',
+    worker: 'https://cdn.jsdelivr.net/npm/pdfjs-dist@4.8.69/build/pdf.worker.min.mjs' },
+  { lib:    'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.8.69/pdf.min.mjs',
+    worker: 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.8.69/pdf.worker.min.mjs' },
+];
+
+/* ======================================================================
+   DOM-REFERENZEN
+   ====================================================================== */
+const $ = id => document.getElementById(id);
+
+const stage      = $('stage');
+const canvas     = $('canvas');
+const ctx        = canvas.getContext('2d');
+const overlay    = $('overlay');
+const overlayTxt = $('overlayText');
+const spinner    = $('spinner');
+const prevBtn    = $('prev');
+const nextBtn    = $('next');
+const counter    = $('counter');
+const bar        = $('bar');
+const fileInput  = $('file');
+const downloadEl = $('download');
+const pdfView    = $('pdf-view');
+const rechnerView = $('rechner-view');
+
+/* ======================================================================
+   ZUSTAND — pro Dokument
+   ====================================================================== */
+const docState = {
+  profil:    { pdfDoc: null, current: 1, total: 0, pageCache: new Map(), objectUrl: null },
+  portfolio: { pdfDoc: null, current: 1, total: 0, pageCache: new Map(), objectUrl: null },
+};
+
+let pdfjsLib   = null;
+let activeTab  = null;   // 'profil' | 'portfolio' | 'rechner'
+let rendering  = false;
+let pending    = null;
+let resizeTimer;
+
+/* ======================================================================
+   PDF-ENGINE
+   ====================================================================== */
+async function loadEngine() {
+  for (const c of CDNS) {
+    try {
+      const mod = await import(c.lib);
+      mod.GlobalWorkerOptions.workerSrc = c.worker;
+      return mod;
+    } catch (_) { /* nächste Quelle versuchen */ }
+  }
+  throw new Error('engine');
+}
+
+/* ======================================================================
+   OVERLAY-HELFER
+   ====================================================================== */
+function showLoading() {
+  overlay.hidden = false; spinner.hidden = false;
+  overlayTxt.textContent = 'Wird geladen …'; $('pick').hidden = true;
+}
+function showEmpty(msg) {
+  overlay.hidden = false; spinner.hidden = true;
+  overlayTxt.textContent = msg || 'PDF hierher ziehen oder Datei wählen.';
+  $('pick').hidden = false;
+}
+function hideOverlay() { overlay.hidden = true; }
+
+/* ======================================================================
+   PDF LADEN
+   ====================================================================== */
+async function loadFromUrl(tabId) {
+  const cfg = TABS_CONFIG[tabId];
+  const ds  = docState[tabId];
+  if (!cfg.pdfUrl) return;
+
+  if (tabId === activeTab) showLoading();
+
+  try {
+    const doc = await pdfjsLib.getDocument(cfg.pdfUrl).promise;
+    ds.pdfDoc = doc;
+    ds.total  = doc.numPages;
+    ds.current = 1;
+
+    if (tabId === activeTab) {
+      setupDownload(tabId, cfg.pdfUrl, cfg.downloadName);
+      hideOverlay();
+      render(tabId, ds.current);
+      setTimeout(() => { preloadPage(tabId, 2); }, 100);
+    } else {
+      /* Hintergrund: erste Seite in Off-Screen-Canvas vorrendern */
+      setTimeout(() => preloadPage(tabId, 1), 200);
+    }
+  } catch (_) {
+    if (tabId === activeTab) showEmpty('PDF konnte nicht geladen werden.');
+  }
+}
+
+async function loadFromFile(file) {
+  if (!file || file.type !== 'application/pdf') { showEmpty('Bitte eine PDF-Datei wählen.'); return; }
+  const tabId = activeTab;
+  if (!tabId || tabId === 'rechner') return;
+  const ds = docState[tabId];
+  showLoading();
+  try {
+    const buf = await file.arrayBuffer();
+    const doc = await pdfjsLib.getDocument({ data: buf.slice(0) }).promise;
+    if (ds.objectUrl) URL.revokeObjectURL(ds.objectUrl);
+    ds.objectUrl = URL.createObjectURL(file);
+    ds.pdfDoc = doc; ds.total = doc.numPages; ds.current = 1;
+    ds.pageCache.clear();
+    setupDownload(tabId, ds.objectUrl, file.name);
+    hideOverlay();
+    render(tabId, ds.current);
+  } catch (_) { showEmpty('Diese Datei ließ sich nicht öffnen.'); }
+}
+
+function setupDownload(tabId, src, name) {
+  const cfg = TABS_CONFIG[tabId];
+  downloadEl.hidden = false;
+  downloadEl.href = src;
+  downloadEl.dataset.downloadSrc  = src;
+  downloadEl.dataset.downloadName = name || cfg.downloadName;
+  downloadEl.setAttribute('download', name || cfg.downloadName);
+  downloadEl.setAttribute('role', 'button');
+  downloadEl.setAttribute('aria-label', 'PDF herunterladen');
+}
+
+async function downloadPdf(e) {
+  e.preventDefault();
+  const src      = downloadEl.dataset.downloadSrc;
+  const filename = downloadEl.dataset.downloadName || 'download.pdf';
+  if (!src) return;
+  try {
+    const res = await fetch(src, { cache: 'no-store' });
+    if (!res.ok) throw new Error('download');
+    const blob = await res.blob();
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  } catch (_) {
+    window.open(src, '_blank', 'noopener');
+  }
+}
+
+/* ======================================================================
+   SEITEN-CACHE & RENDERING
+   ====================================================================== */
+function calcViewport(page) {
+  const wrap  = stage.parentElement;
+  const wcs   = getComputedStyle(wrap);
+  const wrapW = wrap.clientWidth  - parseFloat(wcs.paddingLeft) - parseFloat(wcs.paddingRight);
+  const wrapH = wrap.clientHeight - parseFloat(wcs.paddingTop)  - parseFloat(wcs.paddingBottom);
+  const scs   = getComputedStyle(stage);
+  const frameX = parseFloat(scs.paddingLeft) + parseFloat(scs.paddingRight);
+  const frameY = parseFloat(scs.paddingTop)  + parseFloat(scs.paddingBottom);
+  const MAXW   = 1500;
+  const availW = Math.min(wrapW, MAXW) - frameX;
+  const availH = wrapH - frameY;
+  const base   = page.getViewport({ scale: 1 });
+  const fitScale = Math.min(availW / base.width, availH / base.height);
+  // Compute CSS dimensions first as integers, then derive render scale from those.
+  // This ensures canvas pixel dimensions are exactly cssW/cssH × dpr — no subpixel gap.
+  const cssW = Math.floor(base.width  * fitScale);
+  const cssH = Math.floor(base.height * fitScale);
+  const dpr  = window.devicePixelRatio || 1;
+  const vp   = page.getViewport({ scale: (cssW / base.width) * dpr });
+  return { vp, cssW, cssH, dpr };
+}
+
+async function preloadPage(tabId, num) {
+  const ds = docState[tabId];
+  if (!ds.pdfDoc || num < 1 || num > ds.total || ds.pageCache.has(num)) return;
+  try {
+    const page = await ds.pdfDoc.getPage(num);
+    const { vp, cssW, cssH, dpr } = calcViewport(page);
+    const c = document.createElement('canvas');
+    c.width = Math.round(cssW * dpr); c.height = Math.round(cssH * dpr);
+    await page.render({ canvasContext: c.getContext('2d'), viewport: vp }).promise;
+    if (!ds.pageCache.has(num)) {
+      ds.pageCache.set(num, { canvas: c, cssW, cssH });
+      if (ds.pageCache.size > 6) {
+        [...ds.pageCache.keys()]
+          .sort((a, b) => Math.abs(a - ds.current) - Math.abs(b - ds.current))
+          .slice(6).forEach(k => ds.pageCache.delete(k));
+      }
+    }
+  } catch (_) {}
+}
+
+async function render(tabId, num) {
+  const ds = docState[tabId];
+  if (!ds.pdfDoc || tabId !== activeTab) return;
+  if (rendering) { pending = num; return; }
+  rendering = true;
+  canvas.classList.remove('ready');
+
+  if (ds.pageCache.has(num)) {
+    const { canvas: c, cssW, cssH } = ds.pageCache.get(num);
+    canvas.width = c.width; canvas.height = c.height;
+    canvas.style.width = cssW + 'px'; canvas.style.height = cssH + 'px';
+    ctx.drawImage(c, 0, 0);
+    canvas.classList.add('ready');
+    updateChrome(tabId);
+    rendering = false;
+    if (pending !== null) { const n = pending; pending = null; render(tabId, n); }
+    setTimeout(() => { preloadPage(tabId, num + 1); preloadPage(tabId, num - 1); }, 50);
+    return;
+  }
+
+  const page = await ds.pdfDoc.getPage(num);
+  const { vp, cssW, cssH, dpr } = calcViewport(page);
+  canvas.width  = Math.round(cssW * dpr);
+  canvas.height = Math.round(cssH * dpr);
+  canvas.style.width  = cssW + 'px';
+  canvas.style.height = cssH + 'px';
+  await page.render({ canvasContext: ctx, viewport: vp }).promise;
+  canvas.classList.add('ready');
+  updateChrome(tabId);
+
+  const cached = document.createElement('canvas');
+  cached.width = canvas.width; cached.height = canvas.height;
+  cached.getContext('2d').drawImage(canvas, 0, 0);
+  ds.pageCache.set(num, { canvas: cached, cssW, cssH });
+
+  rendering = false;
+  if (pending !== null) { const n = pending; pending = null; render(tabId, n); }
+  setTimeout(() => { preloadPage(tabId, num + 1); preloadPage(tabId, num - 1); }, 50);
+}
+
+function updateChrome(tabId) {
+  const ds = docState[tabId];
+  counter.textContent = `${String(ds.current).padStart(2, '0')} / ${String(ds.total).padStart(2, '0')}`;
+  bar.style.width = ds.total > 1 ? `${((ds.current - 1) / (ds.total - 1)) * 100}%` : '100%';
+  prevBtn.disabled = ds.current <= 1;
+  nextBtn.disabled = ds.current >= ds.total;
+  stage.classList.add('loaded');
+}
+
+function go(n) {
+  if (!activeTab || activeTab === 'rechner') return;
+  const ds = docState[activeTab];
+  if (!ds.pdfDoc) return;
+  ds.current = Math.min(Math.max(1, n), ds.total);
+  render(activeTab, ds.current);
+}
+
+/* ======================================================================
+   TAB-WECHSEL
+   ====================================================================== */
+function switchTab(tabId, pushState = true) {
+  if (tabId === activeTab) return;
+  activeTab = tabId;
+
+  /* Tab-Buttons aktualisieren */
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    const selected = btn.dataset.tab === tabId;
+    btn.setAttribute('aria-selected', String(selected));
+  });
+
+  /* Seitentitel */
+  document.title = `Studio Lucin · ${TABS_CONFIG[tabId].title}`;
+
+  /* URL aktualisieren ohne Seitenreload */
+  if (pushState) history.pushState({ tab: tabId }, '', `/viewer/#${tabId}`);
+
+  if (tabId === 'rechner') {
+    pdfView.hidden    = true;
+    rechnerView.hidden = false;
+    /* Intro modal beim ersten Besuch zeigen */
+    const INTRO_KEY = 'sl_rechner_seen';
+    if (!localStorage.getItem(INTRO_KEY) && !$('introModal').dataset.shown) {
+      $('introModal').dataset.shown = '1';
+      setTimeout(() => { $('introModal').hidden = false; $('closeIntro').focus(); }, 120);
+    }
+    return;
+  }
+
+  /* PDF-Tab */
+  rechnerView.hidden = true;
+  pdfView.hidden     = false;
+
+  /* Download-Button zurücksetzen */
+  downloadEl.hidden = true;
+
+  /* Navigation-Controls deaktivieren bis PDF geladen */
+  const ds = docState[tabId];
+  prevBtn.disabled = true;
+  nextBtn.disabled = true;
+
+  if (ds.pdfDoc) {
+    /* Bereits geladen → sofort rendern */
+    setupDownload(tabId, ds.objectUrl || TABS_CONFIG[tabId].pdfUrl, TABS_CONFIG[tabId].downloadName);
+    hideOverlay();
+    render(tabId, ds.current);
+  } else {
+    /* Noch nicht geladen → Lade-Overlay + PDF jetzt laden */
+    showLoading();
+    loadFromUrl(tabId);
+  }
+}
+
+/* ======================================================================
+   EREIGNIS-LISTENER
+   ====================================================================== */
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => switchTab(btn.dataset.tab));
+});
+
+prevBtn.addEventListener('click', () => go(docState[activeTab].current - 1));
+nextBtn.addEventListener('click', () => go(docState[activeTab].current + 1));
+
+document.addEventListener('keydown', e => {
+  if (activeTab === 'rechner') return;
+  if (!docState[activeTab]?.pdfDoc) return;
+  if (['ArrowRight', 'PageDown', ' '].includes(e.key)) { e.preventDefault(); go(docState[activeTab].current + 1); }
+  else if (['ArrowLeft', 'PageUp'].includes(e.key))    { e.preventDefault(); go(docState[activeTab].current - 1); }
+  else if (e.key === 'Home') go(1);
+  else if (e.key === 'End')  go(docState[activeTab].total);
+});
+
+downloadEl.addEventListener('click', downloadPdf);
+
+$('pick').addEventListener('click', () => fileInput.click());
+fileInput.addEventListener('change', e => loadFromFile(e.target.files[0]));
+stage.addEventListener('dragover',  e => { e.preventDefault(); stage.classList.add('drag'); });
+stage.addEventListener('dragleave', ()  => stage.classList.remove('drag'));
+stage.addEventListener('drop',      e  => {
+  e.preventDefault(); stage.classList.remove('drag');
+  loadFromFile(e.dataTransfer.files[0]);
+});
+
+window.addEventListener('resize', () => {
+  clearTimeout(resizeTimer);
+  if (activeTab && activeTab !== 'rechner') docState[activeTab].pageCache.clear();
+  resizeTimer = setTimeout(() => {
+    if (activeTab && activeTab !== 'rechner' && docState[activeTab].pdfDoc)
+      render(activeTab, docState[activeTab].current);
+  }, 120);
+});
+
+window.addEventListener('popstate', e => {
+  const tabId = e.state?.tab || tabFromHash();
+  switchTab(tabId, false);
+});
+
+/* ======================================================================
+   HONORARRECHNER-LOGIK
+   ====================================================================== */
+(function initRechner() {
+  const input     = $('budget');
+  const pctEl     = $('result-pct');
+  const feeEl     = $('result-fee');
+  const errorEl   = $('error');
+  const formulaEl = $('formula-box');
+  const introModal = $('introModal');
+  const openIntro  = $('openIntro');
+  const closeIntro = $('closeIntro');
+
+  function showIntroModal()  { introModal.hidden = false; closeIntro.focus(); }
+  function hideIntroModal()  { introModal.hidden = true;  openIntro.focus(); }
+  openIntro.addEventListener('click', showIntroModal);
+  closeIntro.addEventListener('click', () => {
+    localStorage.setItem('sl_rechner_seen', '1'); hideIntroModal();
+  });
+  introModal.addEventListener('click', e => {
+    if (e.target === introModal) { localStorage.setItem('sl_rechner_seen', '1'); hideIntroModal(); }
+  });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && !introModal.hidden) { localStorage.setItem('sl_rechner_seen', '1'); hideIntroModal(); }
+  });
+
+  function parseVal(raw) { return parseFloat(raw.trim().replace(',', '.')); }
+  function fmtEuro(n) { return n.toLocaleString('de-DE', { minimumFractionDigits: 0, maximumFractionDigits: 0 }) + ' €'; }
+  function fmtPct(p) {
+    const d = p >= 1 ? 2 : 3;
+    return p.toLocaleString('de-DE', { minimumFractionDigits: d, maximumFractionDigits: d }) + ' %';
+  }
+  function fmtB(b) {
+    return b % 1 === 0 ? b.toLocaleString('de-DE') : b.toLocaleString('de-DE', { maximumFractionDigits: 2 });
+  }
+
+  function calculate() {
+    const raw   = input.value;
+    const B     = parseVal(raw);
+    const valid = raw.trim() !== '' && !isNaN(B) && B > 0;
+    errorEl.classList.toggle('visible', !valid && raw.trim() !== '');
+    if (!valid) {
+      pctEl.textContent = '—'; pctEl.classList.add('dim');
+      feeEl.textContent = '';  feeEl.classList.add('dim');
+      formulaEl.innerHTML = ''; formulaEl.classList.add('dim');
+      return;
+    }
+    const honorar = Math.round(12000 * Math.pow(B, 0.35));
+    const pct     = 1.2 * Math.pow(B, -0.65);
+    pctEl.textContent = fmtEuro(honorar); pctEl.classList.remove('dim');
+    feeEl.textContent = 'entspricht ' + fmtPct(pct); feeEl.classList.remove('dim');
+    formulaEl.innerHTML =
+      'H = 12.000 × <strong>' + fmtB(B) +
+      '<sup style="font-size:0.7em">0,35</sup></strong>' +
+      ' = <strong>' + fmtEuro(honorar) + '</strong>';
+    formulaEl.classList.remove('dim');
+  }
+
+  input.addEventListener('input', calculate);
+  calculate();
+})();
+
+/* ======================================================================
+   START
+   ====================================================================== */
+function tabFromHash() {
+  const hash = window.location.hash.replace('#', '');
+  return TABS_CONFIG[hash] ? hash : 'profil';
+}
+
+(async () => {
+  /* PDF-Engine laden */
+  try {
+    pdfjsLib = await loadEngine();
+  } catch (_) {
+    showEmpty('PDF-Engine konnte nicht geladen werden (CDN blockiert?).');
+    return;
+  }
+
+  /* Initialen Tab aus URL-Hash lesen */
+  const initialTab = tabFromHash();
+  switchTab(initialTab, false);
+
+  /* Aktives PDF sofort laden (passiert in switchTab) */
+  /* Das andere PDF im Hintergrund vorladen */
+  const otherTab = initialTab === 'portfolio' ? 'profil' : 'portfolio';
+  setTimeout(() => loadFromUrl(otherTab), 500);
+})();
+</script>
+</body>
+</html>

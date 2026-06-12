@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="de"><head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Honorarrechner — Studio Lucin</title>
+  
+  <style>
+    /* ── Fonts ─────────────────────────────────────────────── */
+    @font-face {
+      font-family: "KMRWaldenburg";
+      src: url("../assets/KMRWaldenburg-Regular.ttf") format("truetype");
+      font-weight: 400; font-style: normal; font-display: swap;
+    }
+    @font-face {
+      font-family: "KMRWaldenburg";
+      src: url("../assets/KMRWaldenburg-Medium.ttf") format("truetype");
+      font-weight: 500; font-style: normal; font-display: swap;
+    }
+    @font-face {
+      font-family: "KMRWaldenburg";
+      src: url("../assets/KMRWaldenburg-Light.ttf") format("truetype");
+      font-weight: 300; font-style: normal; font-display: swap;
+    }
+    @font-face {
+      font-family: "KMRWaldenburg Extended";
+      src: url("../assets/KMRWaldenburgExtended-Medium.ttf") format("truetype");
+      font-weight: 500; font-style: normal; font-display: swap;
+    }
+    @font-face {
+      font-family: "JaneAust";
+      src: url("../assets/JaneAust.ttf") format("truetype");
+      font-weight: 400; font-style: normal; font-display: swap;
+    }
+
+    /* ── Tokens ────────────────────────────────────────────── */
+    :root {
+      --sl-cool-blue: #D7EFFF;
+      --bg:           #0A0B10;
+      --bg-card:      #10121A;
+      --bg-inset:     #080A10;
+      --border:       rgba(215, 239, 255, 0.08);
+      --border-mid:   rgba(215, 239, 255, 0.14);
+      --border-strong: rgba(215, 239, 255, 0.28);
+      --fg-1: #F2F6FF;
+      --fg-2: rgba(215, 239, 255, 0.55);
+      --fg-3: rgba(215, 239, 255, 0.32);
+      --font-display: "KMRWaldenburg Extended", "KMRWaldenburg", sans-serif;
+      --font-body:    "KMRWaldenburg", sans-serif;
+    }
+
+    /* ── Reset ─────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body { margin: 0; height: 100%; }
+    body {
+      background: var(--bg);
+      color: var(--fg-1);
+      font-family: var(--font-body);
+      -webkit-font-smoothing: antialiased;
+      text-rendering: optimizeLegibility;
+    }
+    .app { display: flex; flex-direction: column; height: 100dvh; }
+
+    /* ── Logo ──────────────────────────────────────────────── */
+    .logo-top {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+    .logo-top img {
+      height: 20px;
+      filter: invert(1);
+      opacity: 0.55;
+    }
+
+    /* ── Card ──────────────────────────────────────────────── */
+    .card {
+      width: 100%;
+      max-width: 420px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      padding: 44px 48px 40px;
+      position: relative;
+    }
+
+    /* ── Header ────────────────────────────────────────────── */
+    .header { margin-bottom: 36px; }
+    .main-title {
+      font-family: var(--font-display);
+      font-weight: 500;
+      font-size: clamp(20px, 3.5vw, 26px);
+      letter-spacing: -0.025em;
+      line-height: 1.05;
+      color: var(--fg-1);
+    }
+
+    /* ── Divider ───────────────────────────────────────────── */
+    .divider { height: 1px; background: var(--border); margin: 0 0 32px; }
+
+    /* ── Shared label ──────────────────────────────────────── */
+    .field-label {
+      font-size: 12px;
+      font-weight: 500;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--fg-2);
+      margin-bottom: 12px;
+    }
+
+    /* ── Input ─────────────────────────────────────────────── */
+    .input-row {
+      display: flex;
+      align-items: stretch;
+      border: 1px solid var(--border-mid);
+      transition: border-color 180ms ease;
+    }
+    .input-row:focus-within { border-color: var(--border-strong); }
+
+    .budget-input {
+      flex: 1;
+      background: var(--bg-inset);
+      border: none;
+      outline: none;
+      font-family: var(--font-display);
+      font-weight: 500;
+      font-size: 18px;
+      letter-spacing: -0.02em;
+      color: var(--fg-1);
+      padding: 14px 16px;
+      caret-color: var(--sl-cool-blue);
+      width: 0;
+    }
+    .budget-input::placeholder { color: var(--fg-3); }
+    .budget-input::-webkit-outer-spin-button,
+    .budget-input::-webkit-inner-spin-button { -webkit-appearance: none; }
+    .budget-input[type=number] { -moz-appearance: textfield; }
+
+    .input-unit {
+      display: flex;
+      align-items: center;
+      padding: 0 14px;
+      background: var(--bg-inset);
+      border-left: 1px solid var(--border);
+      font-size: 12px;
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      color: var(--fg-3);
+      white-space: nowrap;
+      user-select: none;
+    }
+
+    /* ── Error ─────────────────────────────────────────────── */
+    .error-msg {
+      font-size: 12px;
+      color: rgba(181, 55, 31, 0.85);
+      letter-spacing: 0.04em;
+      margin-top: 6px;
+      height: 0;
+      overflow: hidden;
+      opacity: 0;
+      transition: opacity 180ms ease;
+    }
+    .error-msg.visible { opacity: 1; height: auto; }
+
+    /* ── Formula line (below input) ────────────────────────── */
+    .formula-line {
+      margin-top: 12px;
+      font-family: var(--font-body);
+      font-size: 13px;
+      font-weight: 300;
+      letter-spacing: 0.04em;
+      color: var(--fg-3);
+      min-height: 18px;
+      transition: opacity 200ms ease;
+    }
+    .formula-line strong { font-weight: 400; }
+    .formula-line.dim { opacity: 0.2; }
+
+    /* ── Result (flipped) ──────────────────────────────────── */
+    .result-section {
+      margin-top: 32px;
+      padding-top: 32px;
+      border-top: 1px solid var(--border);
+    }
+
+    /* PRIMARY: big effective % */
+    .result-pct {
+      font-family: var(--font-display);
+      font-weight: 500;
+      font-size: clamp(32px, 6vw, 44px);
+      letter-spacing: -0.035em;
+      line-height: 1;
+      color: var(--fg-1);
+      transition: opacity 200ms ease;
+      margin-top: 10px;
+    }
+    .result-pct.dim { opacity: 0.18; }
+
+    /* SECONDARY: small € fee */
+    .result-fee {
+      margin-top: 10px;
+      font-family: var(--font-body);
+      font-size: 16px;
+      font-weight: 400;
+      color: var(--fg-2);
+      letter-spacing: 0.01em;
+      min-height: 20px;
+      transition: opacity 200ms ease;
+    }
+    .result-fee.dim { opacity: 0; }
+
+
+    /* ── Navigation (identical to profil/portfolio) ──────── */
+    .bar { flex: 0 0 auto; position: relative; display: flex; flex-direction: row; align-items: center; justify-content: space-between; gap: clamp(14px, 2vw, 24px); padding: 18px clamp(16px, 3vw, 28px) 14px; border-bottom: 1px solid rgba(215,239,255,.10); }
+    .suite-nav { display: flex; align-items: center; justify-content: flex-end; gap: 8px; flex-wrap: nowrap; width: auto; margin-left: auto; }
+    .suite-link { min-height: 38px; display: inline-flex; align-items: center; justify-content: center; border: 1px solid rgba(215,239,255,.10); background: transparent; color: rgba(215,239,255,0.55); text-decoration: none; font-size: 12px; letter-spacing: .08em; text-transform: uppercase; padding: 10px 13px; white-space: nowrap; transition: border-color .16s ease, color .16s ease, background .16s ease; }
+    .suite-link:hover { border-color: rgba(215,239,255,.32); color: var(--fg-1); background: rgba(215,239,255,.045); }
+    .suite-link[aria-current="page"] { border-color: var(--sl-cool-blue); color: var(--sl-cool-blue); }
+    .brand { display: flex; align-items: center; justify-content: flex-start; min-width: 0; width: auto; flex: 0 1 300px; }
+    .logo { height: 22px; width: auto; max-width: min(280px, 34vw); display: block; flex: 0 1 auto; opacity: .88; }
+    .logo path { fill: var(--fg-1); }
+    .content-wrap { flex: 1 1 auto; min-height: 0; display: flex; align-items: center; justify-content: center; padding: 24px 16px; overflow-y: auto; }
+    .card-info-button { position: absolute; top: 18px; right: 18px; width: 34px; height: 34px; display: grid; place-items: center; border: none; background: transparent; color: rgba(215,239,255,.34); font: 500 13px/1 var(--font-display); cursor: pointer; transition: color .16s ease; }
+    .card-info-button:hover, .card-info-button:focus-visible { color: rgba(215,239,255,.82); }
+    .card-info-button svg { width: 15px; height: 15px; }
+    @media (max-width: 760px) { .bar { flex-direction: column; justify-content: center; gap: 18px; } .brand { justify-content: center; width: 100%; flex: none; } .logo { height: 20px; max-width: min(300px, 72vw); } .suite-nav { justify-content: center; width: 100%; margin-left: 0; flex-wrap: nowrap; } .suite-link { flex: 1 1 0; min-width: 0; font-size: 11px; padding: 8px 6px; letter-spacing: .06em; } .card { padding: 34px 28px 32px; } .card-info-button { top: 14px; right: 14px; } }
+
+    /* ── Intro modal ──────────────────────────────────────── */
+    .modal { position: fixed; inset: 0; display: grid; place-items: center; padding: 22px; background: rgba(5,6,10,.72); backdrop-filter: blur(10px); z-index: 50; }
+    .modal[hidden] { display: none; }
+    .dialog { width: min(560px, 100%); background: var(--bg-card); box-shadow: 0 24px 90px rgba(0,0,0,.48); padding: 30px; }
+    .dialog h2 { font-family: var(--font-display); font-size: 28px; line-height: 1.05; letter-spacing: -.03em; margin-bottom: 16px; }
+    .dialog p { color: var(--fg-2); line-height: 1.55; margin-bottom: 16px; }
+    .dialog-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 24px; }
+    .btn { min-height: 44px; border: 1px solid var(--border); background: transparent; color: var(--fg-1); font: inherit; padding: 12px 16px; cursor: pointer; text-decoration: none; }
+    .btn.primary { background: var(--sl-cool-blue); border-color: var(--sl-cool-blue); color: var(--bg); font-weight: 500; }
+    :focus-visible { outline: 2px solid var(--sl-cool-blue); outline-offset: 3px; }
+
+  </style>
+</head>
+<body>
+  <div class="app">
+  <header class="bar" aria-label="Studio Lucin Navigation">
+    <a class="brand" href="https://www.studiolucin.de/" target="_blank" rel="noopener noreferrer" aria-label="Studio Lucin Website"><svg class="logo" viewBox="0 0 1058.812 138.706" role="img" aria-label="Studio Lucin" xmlns="http://www.w3.org/2000/svg"><path class="cls-1" d="M448.074,85.857c0-31.895,17.802-51.737,48.027-51.737,30.225,0,47.843,19.841,47.843,51.737s-17.618,51.922-47.843,51.922c-30.225,0-48.027-20.027-48.027-51.922ZM526.142,85.857c0-22.252-10.199-37.829-30.041-37.829-19.842,0-30.225,15.577-30.225,37.829,0,22.252,10.383,38.015,30.225,38.015s30.041-15.762,30.041-38.015Z"/><path class="cls-1" d="M82.888,39.127c-1.853-15.205-13.35-24.292-31.152-24.292-19.287,0-31.339,8.53-31.339,22.067,0,12.054,10.941,17.431,27.258,20.769l14.464,2.967c24.107,5.007,42.093,10.941,42.093,39.683,0,23.551-23.736,38.386-52.105,38.386-32.269,0-51.552-13.908-52.108-43.021h18.541c.743,19.47,13.724,28.186,33.566,28.186,19.468,0,33.192-8.716,33.376-22.624.187-15.947-11.31-19.656-30.409-23.55l-14.467-2.967C17.243,69.91,1.853,60.452,1.853,38.2,1.853,15.391,24.291,0,51.736,0c25.96,0,47.656,11.868,49.696,39.127h-18.544Z"/><path class="cls-1" d="M173.446,50.253h-19.655s0,62.678,0,62.678c0,5.934,1.853,8.715,7.416,8.715h11.313s0,13.908,0,13.908h-14.464c-13.908,0-21.883-3.894-21.883-21.139V50.253s-15.946,0-15.946,0v-13.908s15.946,0,15.946,0V12.424s17.618,0,17.618,0v23.921s19.655,0,19.655,0v13.908Z"/><path class="cls-1" d="M277.973,120.348l.371,15.205h-17.802s-.371-15.205-.371-15.205h-.555c-3.525,8.344-14.651,17.431-31.339,17.431-21.327,0-34.493-13.166-34.493-35.789V36.345s17.802,0,17.802,0v63.604c0,15.391,7.419,23.921,21.327,23.921,16.688,0,27.258-12.61,27.258-30.226v-57.3s17.802,0,17.802,0v84.003Z"/><path class="cls-1" d="M341.332,34.12c13.724,0,25.776,7.232,30.784,14.464h.184V3.152s17.802,0,17.802,0v108.295s.558,24.106.558,24.106h-17.802s-.558-14.093-.558-14.093h-.184c-3.894,8.715-16.133,16.318-31.523,16.318-27.074,0-44.692-19.1-44.692-51.922,0-35.048,20.956-51.737,45.431-51.737ZM344.115,48.028c-19.1,0-30.412,15.762-30.412,37.829,0,22.067,11.313,38.015,30.412,38.015,19.1,0,30.041-15.948,30.041-38.015,0-22.067-10.941-37.829-30.041-37.829Z"/><path class="cls-1" d="M413.224,22.067V3.152s19.287,0,19.287,0v18.914s-19.287,0-19.287,0ZM413.491,135.554V36.345s17.802,0,17.802,0v99.208s-17.802,0-17.802,0Z"/><path class="cls-1" d="M639.826,119.791h62.307s0,15.762,0,15.762h-80.848s0-132.401,0-132.401h18.541s0,116.639,0,116.639Z"/><path class="cls-1" d="M801.284,120.348l.371,15.205h-17.802s-.371-15.205-.371-15.205h-.555c-3.522,8.344-14.651,17.431-31.339,17.431-21.324,0-34.49-13.166-34.49-35.789V36.345s17.802,0,17.802,0v63.604c0,15.391,7.416,23.921,21.324,23.921,16.688,0,27.258-12.61,27.258-30.226v-57.3s17.802,0,17.802,0v84.003Z"/><path class="cls-1" d="M820.374,85.857c0-31.895,17.618-51.737,48.585-51.737,25.96,0,41.722,13.908,43.02,32.266h-17.802c-2.224-11.682-12.052-18.358-25.218-18.358-20.769,0-30.784,15.577-30.784,37.829s10.015,38.015,30.784,38.015c12.795,0,23.736-5.934,25.96-19.285h17.802c-3.338,22.067-21.695,33.193-43.762,33.193-30.968,0-48.585-20.027-48.585-51.922Z"/><path class="cls-1" d="M931.529,22.066V3.152s19.284,0,19.284,0v18.914s-19.284,0-19.284,0ZM932.272,135.553V36.345s17.802,0,17.802,0v99.208s-17.802,0-17.802,0Z"/><path class="cls-1" d="M1058.812,70.094v65.459s-17.802,0-17.802,0v-63.604c0-15.391-8.53-23.921-22.438-23.921-16.688,0-27.258,12.61-27.258,30.226v57.3s-17.802,0-17.802,0V51.551s-.371-15.205-.371-15.205h17.802s.371,15.205.371,15.205h.555c3.522-8.344,14.651-17.431,31.339-17.431,21.324,0,35.604,13.351,35.604,35.974Z"/></svg></a>
+    <nav class="suite-nav" aria-label="Bereiche">
+      <a class="suite-link" href="../profil/">Profil</a>
+      <a class="suite-link" href="../portfolio/">Portfolio</a>
+      <a class="suite-link" aria-current="page" href="./">Rechner</a>
+    </nav>
+  </header>
+
+  <div class="content-wrap">
+  <main class="card" role="main">
+
+    <button class="card-info-button" type="button" id="openIntro" aria-label="Info zum Honorarrechner" title="Info zum Honorarrechner">
+      <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5"/><path d="M12 8h.01"/></svg>
+    </button>
+    <header class="header">
+      <h1 class="main-title">Honorarrechner</h1>
+    </header>
+
+    <div class="divider" role="separator"></div>
+
+    <!-- Input -->
+    <section aria-label="Eingabe">
+      <p class="field-label">Projektbudget</p>
+      <div class="input-row">
+        <input class="budget-input" id="budget" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" value="400" aria-label="Projektbudget">
+        <span class="input-unit" aria-hidden="true">Mio. €</span>
+      </div>
+      <p class="error-msg" id="error" role="alert" aria-live="polite">
+        Bitte ein Projektbudget größer als 0 eingeben.
+      </p>
+      <p class="formula-line" id="formula-box"></p>
+    </section>
+
+    <!-- Result — flipped -->
+    <section class="result-section" aria-label="Ergebnis">
+      <p class="field-label">Honorar</p>
+      <p class="result-pct" id="result-pct" aria-live="polite">—</p>
+      <p class="result-fee" id="result-fee"></p>
+    </section>
+
+
+
+  <div class="modal" id="introModal" role="dialog" aria-modal="true" aria-labelledby="introTitle" hidden>
+    <div class="dialog">
+      <h2 id="introTitle">So funktioniert der Honorarrechner</h2>
+      <p>Jedes Honorar geht von einer festen Basis von <strong>12.000&nbsp;€</strong> aus und wächst degressiv mit Ihrem Projektbudget.</p>
+      <p>Je größer das Projekt, desto geringer ist der prozentuale Anteil am gesamten Projektvolumen.</p>
+      <div class="dialog-actions">
+        <button class="btn primary" type="button" id="closeIntro">Verstanden</button>
+      </div>
+    </div>
+  </div>
+
+
+  <script>
+  (function () {
+
+    /* ── Intro modal ──────────────────────────────────────── */
+    const INTRO_KEY = 'sl_rechner_seen';
+    const introModal = document.getElementById("introModal");
+    const openIntro = document.getElementById("openIntro");
+    const closeIntro = document.getElementById("closeIntro");
+    function showIntro() { introModal.hidden = false; closeIntro.focus(); }
+    function hideIntro() { introModal.hidden = true; openIntro.focus(); }
+    openIntro.addEventListener("click", showIntro);
+    closeIntro.addEventListener("click", () => { localStorage.setItem(INTRO_KEY, '1'); hideIntro(); });
+    introModal.addEventListener("click", (event) => { if (event.target === introModal) { localStorage.setItem(INTRO_KEY, '1'); hideIntro(); } });
+    document.addEventListener("keydown", (event) => { if (event.key === "Escape" && !introModal.hidden) { localStorage.setItem(INTRO_KEY, '1'); hideIntro(); } });
+    if (!localStorage.getItem(INTRO_KEY)) { setTimeout(showIntro, 120); }
+
+
+    /* ── Calculator logic ─────────────────────────────────── */
+    const input     = document.getElementById("budget");
+    const pctEl     = document.getElementById("result-pct");
+    const feeEl     = document.getElementById("result-fee");
+    const errorEl   = document.getElementById("error");
+    const formulaEl = document.getElementById("formula-box");
+
+    function parseVal(raw) { return parseFloat(raw.trim().replace(",", ".")); }
+
+    function fmtEuro(n) {
+      return n.toLocaleString("de-DE", { minimumFractionDigits: 0, maximumFractionDigits: 0 }) + "\u202f€";
+    }
+    function fmtPct(p) {
+      const d = p >= 1 ? 2 : 3;
+      return p.toLocaleString("de-DE", { minimumFractionDigits: d, maximumFractionDigits: d }) + "\u202f%";
+    }
+    function fmtB(b) {
+      return b % 1 === 0
+        ? b.toLocaleString("de-DE")
+        : b.toLocaleString("de-DE", { maximumFractionDigits: 2 });
+    }
+    function effectivePct(B) { return 1.2 * Math.pow(B, -0.65); }
+
+    function calculate() {
+      const raw   = input.value;
+      const B     = parseVal(raw);
+      const valid = raw.trim() !== "" && !isNaN(B) && B > 0;
+
+      errorEl.classList.toggle("visible", !valid && raw.trim() !== "");
+
+      if (!valid) {
+        pctEl.textContent = "—"; pctEl.classList.add("dim");
+        feeEl.textContent = "";  feeEl.classList.add("dim");
+        formulaEl.innerHTML = ""; formulaEl.classList.add("dim");
+        return;
+      }
+
+      const honorar = Math.round(12000 * Math.pow(B, 0.35));
+      const pct     = effectivePct(B);
+
+      pctEl.textContent = fmtEuro(honorar);
+      pctEl.classList.remove("dim");
+
+      feeEl.textContent = "entspricht " + fmtPct(pct);
+      feeEl.classList.remove("dim");
+
+      formulaEl.innerHTML =
+        "H\u2009=\u200912.000\u2009×\u2009<strong>"
+        + fmtB(B)
+        + "<sup style=\"font-size:0.7em\">0,35</sup></strong>"
+        + "\u2009=\u2009<strong>" + fmtEuro(honorar) + "</strong>";
+      formulaEl.classList.remove("dim");
+    }
+
+    input.addEventListener("input", calculate);
+    calculate();
+  })();
+  </script>
+
+
+
+</main></div></div></body></html>
