@@ -240,10 +240,11 @@
     /* Rechner intro modal */
     .modal { position: fixed; inset: 0; display: grid; place-items: center; padding: 22px; background: rgba(5,6,10,.72); backdrop-filter: blur(10px); z-index: 50; }
     .modal[hidden] { display: none; }
-    .dialog { width: min(560px, 100%); background: var(--surface); box-shadow: 0 24px 90px rgba(0,0,0,.48); padding: 30px; }
+    .dialog { width: min(560px, 100%); background: var(--surface); box-shadow: 0 24px 90px rgba(0,0,0,.48); padding: 30px; display: flex; flex-direction: column; max-height: calc(100dvh - 44px); }
     .dialog h2 { font-family: var(--font-display); font-size: 28px; line-height: 1.05; letter-spacing: -.03em; margin-bottom: 16px; }
     .dialog p { color: var(--muted); line-height: 1.55; margin-bottom: 16px; }
-    .dialog-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 24px; }
+    .dialog-scroll { overflow-y: auto; flex: 1 1 auto; min-height: 0; }
+    .dialog-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 24px; flex-shrink: 0; }
     .btn { min-height: 44px; border: 1px solid var(--line); background: transparent; color: var(--ink); font: inherit; padding: 12px 16px; cursor: pointer; text-decoration: none; }
     .btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); font-weight: 500; }
 
@@ -355,10 +356,12 @@
     </div>
     <div class="modal" id="introModal" role="dialog" aria-modal="true" aria-labelledby="introTitle" hidden>
       <div class="dialog">
-        <h2 id="introTitle">So funktioniert unser Preissystem</h2>
-        <p>Jede Projektidentität wird bei uns vollumfänglich entwickelt. Was das konkret beinhaltet, steht im <a href="https://www.studiolucin.de/profil" target="_blank" rel="noopener noreferrer">Unternehmensprofil</a> unter „Leistungen", Seite&nbsp;8.</p>
-        <p>Für die Vergütung haben wir eine eigene Formel entwickelt. Das Honorar setzt sich zusammen aus einer Basis von 12.000&nbsp;€ und wächst mit dem Projektbudget, wobei der prozentuale Anteil am Gesamtvolumen degressiv sinkt.</p>
-        <p>Ein Projekt mit doppeltem Budget bedeutet nicht doppelten Aufwand an Konzeption. Ein linear steigendes Vergütungsmodell würde diesen Unterschied ignorieren. Unsere Formel berücksichtigt ihn.</p>
+        <div class="dialog-scroll">
+          <h2 id="introTitle">So funktioniert unser Preissystem</h2>
+          <p>Jede Projektidentität wird bei uns vollumfänglich entwickelt. Was das konkret beinhaltet, steht im <a href="https://www.studiolucin.de/profil" target="_blank" rel="noopener noreferrer">Unternehmensprofil</a> unter „Leistungen", Seite&nbsp;8.</p>
+          <p>Für die Vergütung haben wir eine eigene Formel entwickelt. Das Honorar setzt sich zusammen aus einer Basis von 12.000&nbsp;€ und wächst mit dem Projektbudget, wobei der prozentuale Anteil am Gesamtvolumen degressiv sinkt.</p>
+          <p>Ein Projekt mit doppeltem Budget bedeutet nicht doppelten Aufwand an Konzeption. Ein linear steigendes Vergütungsmodell würde diesen Unterschied ignorieren. Unsere Formel berücksichtigt ihn.</p>
+        </div>
         <div class="dialog-actions">
           <button class="btn primary" type="button" id="closeIntro">Verstanden</button>
         </div>
