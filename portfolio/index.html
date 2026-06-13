@@ -499,7 +499,7 @@
       e.preventDefault();
       var url = a.getAttribute('href');
       if (window.top !== window) {
-        window.parent.postMessage({ slNavigate: url }, 'https://www.studiolucin.de');
+        window.top.postMessage({ slNavigate: url }, '*');
       } else {
         window.location.href = url;
       }
