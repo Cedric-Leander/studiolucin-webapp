@@ -304,10 +304,13 @@
     function hideOverlay() { overlay.hidden = true; }
 
     /* ---- PDF laden ---- */
-    async function loadFromUrl(url) {
+    async function loadFromUrl(url, attempt = 0) {
       showLoading();
       try { const doc = await pdfjsLib.getDocument(url).promise; onLoaded(doc, url); }
-      catch (_) { showEmpty("PDF konnte nicht geladen werden. Pfad prüfen oder Datei wählen."); }
+      catch (_) {
+        if (attempt < 2) { setTimeout(() => loadFromUrl(url, attempt + 1), 1500); }
+        else { showEmpty("PDF konnte nicht geladen werden. Pfad prüfen oder Datei wählen."); }
+      }
     }
     async function loadFromFile(file) {
       if (!file || file.type !== "application/pdf") { showEmpty("Bitte eine PDF-Datei wählen."); return; }
@@ -406,8 +409,6 @@
       if (!pdfDoc) return;
       if (rendering) { pending = num; return; }
       rendering = true;
-      canvas.classList.remove("ready");
-
       if (pageCache.has(num)) {
         const { canvas: c, cssW, cssH } = pageCache.get(num);
         canvas.width = c.width; canvas.height = c.height;
@@ -421,6 +422,7 @@
         return;
       }
 
+      canvas.classList.remove("ready");
       const page = await pdfDoc.getPage(num);
       const { vp, cssW, cssH } = calcViewport(page);
 

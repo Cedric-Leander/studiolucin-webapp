@@ -460,7 +460,7 @@ function hideOverlay() { overlay.hidden = true; }
 /* ======================================================================
    PDF LADEN
    ====================================================================== */
-async function loadFromUrl(tabId) {
+async function loadFromUrl(tabId, attempt = 0) {
   const cfg = TABS_CONFIG[tabId];
   const ds  = docState[tabId];
   if (!cfg.pdfUrl) return;
@@ -479,11 +479,14 @@ async function loadFromUrl(tabId) {
       render(tabId, ds.current);
       setTimeout(() => { preloadPage(tabId, 2); }, 100);
     } else {
-      /* Hintergrund: erste Seite in Off-Screen-Canvas vorrendern */
       setTimeout(() => preloadPage(tabId, 1), 200);
     }
   } catch (_) {
-    if (tabId === activeTab) showEmpty('PDF konnte nicht geladen werden.');
+    if (attempt < 2) {
+      setTimeout(() => loadFromUrl(tabId, attempt + 1), 1500);
+    } else {
+      if (tabId === activeTab) showEmpty('PDF konnte nicht geladen werden.');
+    }
   }
 }
 
@@ -586,7 +589,6 @@ async function render(tabId, num) {
   if (!ds.pdfDoc || tabId !== activeTab) return;
   if (rendering) { pending = num; return; }
   rendering = true;
-  canvas.classList.remove('ready');
 
   if (ds.pageCache.has(num)) {
     const { canvas: c, cssW, cssH } = ds.pageCache.get(num);
@@ -601,6 +603,7 @@ async function render(tabId, num) {
     return;
   }
 
+  canvas.classList.remove('ready');
   const page = await ds.pdfDoc.getPage(num);
   const { vp, cssW, cssH, dpr } = calcViewport(page);
   canvas.width  = Math.round(cssW * dpr);
