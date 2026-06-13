@@ -211,9 +211,9 @@
         </svg>
       </a>
       <nav class="suite-nav" aria-label="Bereiche">
-        <a class="suite-link" href="https://www.studiolucin.de/profil" target="_top">Profil</a>
-        <a class="suite-link" aria-current="page" href="https://www.studiolucin.de/portfolio" target="_top">Portfolio</a>
-        <a class="suite-link" href="https://www.studiolucin.de/rechner" target="_top">Rechner</a>
+        <a class="suite-link" href="https://www.studiolucin.de/profil" data-nav>Profil</a>
+        <a class="suite-link" aria-current="page" href="https://www.studiolucin.de/portfolio" data-nav>Portfolio</a>
+        <a class="suite-link" href="https://www.studiolucin.de/rechner" data-nav>Rechner</a>
       </nav>
     </header>
 
@@ -493,5 +493,18 @@
       else showEmpty();
     })();
   </script>
+<script>
+  document.querySelectorAll('[data-nav]').forEach(function(a) {
+    a.addEventListener('click', function(e) {
+      e.preventDefault();
+      var url = a.getAttribute('href');
+      if (window.top !== window) {
+        window.parent.postMessage({ slNavigate: url }, 'https://www.studiolucin.de');
+      } else {
+        window.location.href = url;
+      }
+    });
+  });
+</script>
 </body>
 </html>
