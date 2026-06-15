@@ -573,6 +573,7 @@ async function preloadPage(tabId, num) {
   try {
     const page = await ds.pdfDoc.getPage(num);
     const { vp, cssW, cssH, dpr } = calcViewport(page);
+    if (cssW <= 0 || cssH <= 0) return;   // View gerade ausgeblendet → kein Cache
     const c = document.createElement('canvas');
     c.width = Math.round(cssW * dpr); c.height = Math.round(cssH * dpr);
     await page.render({ canvasContext: c.getContext('2d'), viewport: vp }).promise;
@@ -702,8 +703,17 @@ function switchTab(tabId, pushState = true) {
 /* ======================================================================
    EREIGNIS-LISTENER
    ====================================================================== */
+/* Reiter-Klick = echte Top-Navigation (Framer-Seite wechselt die URL).
+   Im iframe-Kontext per postMessage an window.top; standalone intern. */
+const TAB_PATHS = { profil: '/profil', portfolio: '/portfolio', rechner: '/rechner' };
+function navigateTo(tabId) {
+  if (tabId === activeTab) return;
+  const path = TAB_PATHS[tabId];
+  if (window.top !== window) window.top.postMessage({ slNavigate: path }, '*');
+  else switchTab(tabId);
+}
 document.querySelectorAll('.tab-btn').forEach(btn => {
-  btn.addEventListener('click', () => switchTab(btn.dataset.tab));
+  btn.addEventListener('click', () => navigateTo(btn.dataset.tab));
 });
 
 prevBtn.addEventListener('click', () => go(docState[activeTab].current - 1));
