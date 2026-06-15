@@ -716,8 +716,8 @@ function switchTab(tabId, pushState = true) {
     rechnerView.hidden = false;
     if (planBg)   planBg.hidden   = false;
     if (planMeta) planMeta.hidden = false;
-    // SVG war versteckt (display:none) → Animationen neu starten
-    setTimeout(() => window.dispatchEvent(new Event('resize')), 0);
+    // SVG war versteckt → Animationen nach Layout-Update direkt neu starten
+    requestAnimationFrame(() => window.dispatchEvent(new CustomEvent('sl:rechner-activated')));
     return;
   }
 
@@ -1183,6 +1183,8 @@ function tabFromHash() {
     clearTimeout(rzT);
     rzT = setTimeout(() => { stKey = ''; calculate(); }, 140);
   });
+  /* Direkter Rebuild wenn Rechner-Tab aktiviert wird (kein Debounce-Risiko) */
+  window.addEventListener('sl:rechner-activated', () => { stKey = ''; calculate(); });
   setTimeout(() => { stKey = ''; calculate(); }, 400);
 
 })();
