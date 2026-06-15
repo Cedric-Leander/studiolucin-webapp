@@ -247,7 +247,7 @@
           </div>
           <div class="slider-range-labels">
             <span>1 Mio. €</span>
-            <span>5.000 Mio. €</span>
+            <span>2.000 Mio. €</span>
           </div>
           <p class="formula-line" id="formula-box"></p>
         </section>
@@ -304,7 +304,7 @@
     const feeEl     = document.getElementById('result-fee');
     const formulaEl = document.getElementById('formula-box');
 
-    const B_MAX = 5000;
+    const B_MAX = 2000;
 
     function sliderToValue(s) { return Math.exp(s / 1000 * Math.log(B_MAX)); }
     function valueToSlider(v) { return Math.round(Math.log(v) / Math.log(B_MAX) * 1000); }
