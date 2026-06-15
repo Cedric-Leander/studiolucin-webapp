@@ -480,7 +480,7 @@ async function loadFromUrl(tabId, attempt = 0) {
       setupDownload(tabId, cfg.pdfUrl, cfg.downloadName);
       hideOverlay();
       render(tabId, ds.current);
-      setTimeout(() => { preloadPage(tabId, 2); }, 100);
+      setTimeout(() => preloadAll(tabId), 200);
     } else {
       setTimeout(() => preloadPage(tabId, 1), 200);
     }
@@ -577,15 +577,18 @@ async function preloadPage(tabId, num) {
     const c = document.createElement('canvas');
     c.width = Math.round(cssW * dpr); c.height = Math.round(cssH * dpr);
     await page.render({ canvasContext: c.getContext('2d'), viewport: vp }).promise;
-    if (!ds.pageCache.has(num)) {
-      ds.pageCache.set(num, { canvas: c, cssW, cssH });
-      if (ds.pageCache.size > 6) {
-        [...ds.pageCache.keys()]
-          .sort((a, b) => Math.abs(a - ds.current) - Math.abs(b - ds.current))
-          .slice(6).forEach(k => ds.pageCache.delete(k));
-      }
-    }
+    if (!ds.pageCache.has(num)) ds.pageCache.set(num, { canvas: c, cssW, cssH });
   } catch (_) {}
+}
+
+async function preloadAll(tabId) {
+  const ds = docState[tabId];
+  if (!ds.pdfDoc) return;
+  for (let n = 1; n <= ds.total; n++) {
+    if (tabId !== activeTab) return;
+    await preloadPage(tabId, n);
+    await new Promise(r => setTimeout(r, 60));
+  }
 }
 
 async function render(tabId, num) {
@@ -607,21 +610,22 @@ async function render(tabId, num) {
     return;
   }
 
-  canvas.classList.remove('ready');
   const page = await ds.pdfDoc.getPage(num);
   const { vp, cssW, cssH, dpr } = calcViewport(page);
-  canvas.width  = Math.round(cssW * dpr);
-  canvas.height = Math.round(cssH * dpr);
+  const offscreen = document.createElement('canvas');
+  offscreen.width  = Math.round(cssW * dpr);
+  offscreen.height = Math.round(cssH * dpr);
+  await page.render({ canvasContext: offscreen.getContext('2d'), viewport: vp }).promise;
+  // Atomischer Swap: alte Seite bleibt sichtbar bis neue fertig ist → kein schwarzer Screen
+  canvas.width  = offscreen.width;
+  canvas.height = offscreen.height;
   canvas.style.width  = cssW + 'px';
   canvas.style.height = cssH + 'px';
-  await page.render({ canvasContext: ctx, viewport: vp }).promise;
+  ctx.drawImage(offscreen, 0, 0);
   canvas.classList.add('ready');
   updateChrome(tabId);
 
-  const cached = document.createElement('canvas');
-  cached.width = canvas.width; cached.height = canvas.height;
-  cached.getContext('2d').drawImage(canvas, 0, 0);
-  ds.pageCache.set(num, { canvas: cached, cssW, cssH });
+  ds.pageCache.set(num, { canvas: offscreen, cssW, cssH });
 
   rendering = false;
   if (pending !== null) { const n = pending; pending = null; render(tabId, n); }
