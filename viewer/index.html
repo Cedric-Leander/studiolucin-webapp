@@ -72,7 +72,7 @@
     .tab-btn[aria-selected="true"] { border-color: var(--accent); color: var(--accent); }
 
     /* ── View containers ────────────────────────────────────── */
-    #pdf-view  { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
+    #pdf-view  { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; background: var(--bg); }
     #rechner-view { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
     [hidden] { display: none !important; }
 
@@ -285,7 +285,7 @@
 <body>
 
   <!-- Generativer Lageplan-Hintergrund (Rechner-Tab) -->
-  <svg id="planBg" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" hidden>
+  <svg id="planBg" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
     <defs>
       <radialGradient id="lampGlow">
         <stop offset="0%"   stop-color="#D7EFFF" stop-opacity=".72"/>
