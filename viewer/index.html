@@ -206,7 +206,8 @@
     .divider { height:1px; background:var(--line); margin:0 0 24px; }
     .field-label { font-size:12px; font-weight:500; letter-spacing:0.14em; text-transform:uppercase; color:var(--muted); margin-bottom:12px; }
     .budget-display { display:flex; align-items:baseline; gap:7px; margin-bottom:20px; }
-    .budget-val { font-family:var(--font-display); font-weight:500; font-size:clamp(26px,4.5vw,32px); letter-spacing:-0.03em; line-height:1; color:var(--ink); }
+    .budget-val { font-family:var(--font-display); font-weight:500; font-size:clamp(26px,4.5vw,32px); letter-spacing:-0.03em; line-height:1; color:var(--ink); cursor:text; outline:none; caret-color:var(--ink); }
+    .budget-val:focus { opacity:0.8; }
     .budget-unit { font-family:var(--font); font-size:14px; font-weight:400; color:var(--muted); letter-spacing:0.02em; }
     .slider-wrap { position:relative; padding:2px 0; }
     input[type="range"].budget-slider {
@@ -369,16 +370,16 @@
         <section aria-label="Eingabe">
           <p class="field-label">Projektbudget</p>
           <div class="budget-display" aria-live="polite">
-            <span class="budget-val" id="budget-display">400</span>
+            <span class="budget-val" id="budget-display" contenteditable="true" inputmode="decimal" spellcheck="false" autocomplete="off" role="spinbutton" aria-valuemin="1" aria-valuemax="400">400</span>
             <span class="budget-unit">Mio. €</span>
           </div>
           <div class="slider-wrap">
             <input type="range" class="budget-slider" id="budget" min="0" max="1000"
-              aria-label="Projektbudget in Mio. Euro" aria-valuemin="1" aria-valuemax="1000">
+              aria-label="Projektbudget in Mio. Euro" aria-valuemin="1" aria-valuemax="400">
           </div>
           <div class="slider-range-labels">
             <span>1 Mio. €</span>
-            <span>1.000 Mio. €</span>
+            <span>400 Mio. €</span>
           </div>
           <p class="formula-line" id="formula-box"></p>
         </section>
@@ -849,7 +850,7 @@ function tabFromHash() {
   const feeEl     = document.getElementById('result-fee');
   const formulaEl = document.getElementById('formula-box');
 
-  const B_MAX = 1000;
+  const B_MAX = 400;
   function sliderToValue(s) { return 1 + s / 1000 * (B_MAX - 1); }
   function valueToSlider(v) { return Math.round((v - 1) / (B_MAX - 1) * 1000); }
   function fmtBudget(b) {
@@ -885,10 +886,37 @@ function tabFromHash() {
     const s = parseInt(slider.value, 10);
     currentB = sliderToValue(s);
     slider.style.setProperty('--fill', (s / 10) + '%');
-    displayEl.textContent = fmtBudget(currentB);
+    if (document.activeElement !== displayEl) displayEl.textContent = fmtBudget(currentB);
     slider.setAttribute('aria-valuenow', Math.round(currentB));
     calculate();
   }
+
+  displayEl.addEventListener('focus', () => {
+    setTimeout(() => {
+      const range = document.createRange();
+      range.selectNodeContents(displayEl);
+      const sel = window.getSelection();
+      sel.removeAllRanges();
+      sel.addRange(range);
+    }, 0);
+  });
+
+  displayEl.addEventListener('blur', () => {
+    const raw = displayEl.textContent.trim().replace(/\./g, '').replace(',', '.');
+    const val = parseFloat(raw);
+    if (!isNaN(val)) {
+      const clamped = Math.max(1, Math.min(400, val));
+      currentB = clamped;
+      slider.value = valueToSlider(clamped);
+      updateSlider();
+    } else {
+      displayEl.textContent = fmtBudget(currentB);
+    }
+  });
+
+  displayEl.addEventListener('keydown', e => {
+    if (e.key === 'Enter') { e.preventDefault(); displayEl.blur(); }
+  });
 
   /* ── Generativer Lageplan ────────────────────────────── */
   const planBgEl = document.getElementById('planBg');
