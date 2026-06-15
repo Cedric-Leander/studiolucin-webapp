@@ -933,7 +933,7 @@ function tabFromHash() {
   updateSlider();
   slider.addEventListener('input', updateSlider);
 
-  function houseCount(B) { return Math.max(1, Math.min(28, Math.ceil(B / 35))); }
+  function houseCount(B) { return Math.max(1, Math.min(28, Math.ceil(B * 28 / 400))); }
   function r1(n) { return Math.round(n * 10) / 10; }
   function clampV(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
 
