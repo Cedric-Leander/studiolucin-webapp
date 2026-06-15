@@ -347,10 +347,6 @@
       calculate();
     }
 
-    slider.value = valueToSlider(400);
-    updateSlider();
-    slider.addEventListener('input', updateSlider);
-
     /* ── Generativer Lageplan ────────────────────────────── */
     const planBg  = document.getElementById('planBg');
     const plan    = document.getElementById('plan');
@@ -361,6 +357,10 @@
     const renderedKeys = new Set();
     const rectMap      = new Map();
     const svgns = 'http://www.w3.org/2000/svg';
+
+    slider.value = valueToSlider(400);
+    updateSlider();
+    slider.addEventListener('input', updateSlider);
 
     function houseCount(B) {
       const n = Math.round(4.60816 * Math.log(B) - 7.6107);
