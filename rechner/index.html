@@ -1,394 +1,613 @@
 <!DOCTYPE html>
-<html lang="de"><head>
+<html lang="de">
+<head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Honorarrechner — Studio Lucin</title>
-  
+
   <style>
     /* ── Fonts ─────────────────────────────────────────────── */
-    @font-face {
-      font-family: "KMRWaldenburg";
-      src: url("../assets/KMRWaldenburg-Regular.ttf") format("truetype");
-      font-weight: 400; font-style: normal; font-display: swap;
-    }
-    @font-face {
-      font-family: "KMRWaldenburg";
-      src: url("../assets/KMRWaldenburg-Medium.ttf") format("truetype");
-      font-weight: 500; font-style: normal; font-display: swap;
-    }
-    @font-face {
-      font-family: "KMRWaldenburg";
-      src: url("../assets/KMRWaldenburg-Light.ttf") format("truetype");
-      font-weight: 300; font-style: normal; font-display: swap;
-    }
-    @font-face {
-      font-family: "KMRWaldenburg Extended";
-      src: url("../assets/KMRWaldenburgExtended-Medium.ttf") format("truetype");
-      font-weight: 500; font-style: normal; font-display: swap;
-    }
-    @font-face {
-      font-family: "JaneAust";
-      src: url("../assets/JaneAust.ttf") format("truetype");
-      font-weight: 400; font-style: normal; font-display: swap;
-    }
+    @font-face { font-family:"KMRWaldenburg"; src:url("../assets/KMRWaldenburg-Regular.ttf") format("truetype"); font-weight:400; font-style:normal; font-display:swap; }
+    @font-face { font-family:"KMRWaldenburg"; src:url("../assets/KMRWaldenburg-Medium.ttf") format("truetype"); font-weight:500; font-style:normal; font-display:swap; }
+    @font-face { font-family:"KMRWaldenburg"; src:url("../assets/KMRWaldenburg-Light.ttf") format("truetype"); font-weight:300; font-style:normal; font-display:swap; }
+    @font-face { font-family:"KMRWaldenburg Extended"; src:url("../assets/KMRWaldenburgExtended-Medium.ttf") format("truetype"); font-weight:500; font-style:normal; font-display:swap; }
+    @font-face { font-family:"JaneAust"; src:url("../assets/JaneAust.ttf") format("truetype"); font-weight:400; font-style:normal; font-display:swap; }
 
-    /* ── Tokens ────────────────────────────────────────────── */
+    /* ── Tokens ─────────────────────────────────────────────── */
     :root {
-      --sl-cool-blue: #D7EFFF;
-      --bg:           #0A0B10;
-      --bg-card:      #10121A;
-      --bg-inset:     #080A10;
-      --border:       rgba(215, 239, 255, 0.08);
-      --border-mid:   rgba(215, 239, 255, 0.14);
-      --border-strong: rgba(215, 239, 255, 0.28);
+      --sl-cool-blue:  #D7EFFF;
+      --bg:            #0A0B10;
+      --bg-card:       #10121A;
+      --bg-inset:      #080A10;
+      --border:        rgba(215,239,255,0.08);
+      --border-mid:    rgba(215,239,255,0.14);
+      --border-strong: rgba(215,239,255,0.28);
       --fg-1: #F2F6FF;
-      --fg-2: rgba(215, 239, 255, 0.55);
-      --fg-3: rgba(215, 239, 255, 0.32);
-      --font-display: "KMRWaldenburg Extended", "KMRWaldenburg", sans-serif;
-      --font-body:    "KMRWaldenburg", sans-serif;
+      --fg-2: rgba(215,239,255,0.55);
+      --fg-3: rgba(215,239,255,0.32);
+      --font-display: "KMRWaldenburg Extended","KMRWaldenburg",sans-serif;
+      --font-body:    "KMRWaldenburg",sans-serif;
     }
 
-    /* ── Reset ─────────────────────────────────────────────── */
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    /* ── Reset ──────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
+    html, body { margin:0; height:100%; }
+    body { background:var(--bg); color:var(--fg-1); font-family:var(--font-body); -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility; }
+    .app { display:flex; flex-direction:column; height:100dvh; position:relative; z-index:1; }
 
-    html, body { margin: 0; height: 100%; }
-    body {
-      background: var(--bg);
-      color: var(--fg-1);
-      font-family: var(--font-body);
-      -webkit-font-smoothing: antialiased;
-      text-rendering: optimizeLegibility;
-    }
-    .app { display: flex; flex-direction: column; height: 100dvh; }
+    /* ── Animated site-plan background ─────────────────────── */
+    #planBg { position:fixed; inset:0; width:100%; height:100%; z-index:-1; pointer-events:none; overflow:hidden; }
+    @keyframes lpDraw  { to { stroke-dashoffset:0; } }
+    @keyframes lpFade  { to { opacity:1; } }
+    @keyframes lpPulse { 0%,100% { opacity:.4; } 50% { opacity:1; } }
+    .gen-floor { fill:rgba(215,239,255,.028); stroke:none; opacity:0; animation:lpFade .55s ease forwards; }
+    .gen-wall  { fill:none; stroke:rgba(215,239,255,.5); stroke-width:1.4; stroke-linejoin:miter; stroke-linecap:square; stroke-dasharray:1; stroke-dashoffset:1; animation:lpDraw .85s ease forwards; }
+    .gen-room  { fill:none; stroke:rgba(215,239,255,.34); stroke-width:1; stroke-linecap:butt; opacity:0; animation:lpFade .55s ease forwards; }
+    .gen-road  { fill:none; stroke:rgba(215,239,255,.2); stroke-width:1; stroke-linecap:round; stroke-linejoin:round; stroke-dasharray:1; stroke-dashoffset:1; animation:lpDraw 1.1s ease forwards; }
+    .gen-lamp  { opacity:0; animation:lpFade .5s ease forwards; }
+    .l-glow    { animation:lpPulse 3.4s ease-in-out infinite; }
+    .l-dot     { fill:#EAF6FF; stroke:none; }
 
-    /* ── Logo ──────────────────────────────────────────────── */
-    .logo-top {
-      text-align: center;
-      margin-bottom: 32px;
-    }
-    .logo-top img {
-      height: 20px;
-      filter: invert(1);
-      opacity: 0.55;
-    }
+    /* ── Plan meta (north arrow) ────────────────────────────── */
+    .plan-meta { position:fixed; left:28px; bottom:24px; z-index:0; pointer-events:none; display:flex; flex-direction:column; gap:14px; color:rgba(215,239,255,.34); font-family:var(--font-body); }
+    .pm-north  { display:flex; flex-direction:column; align-items:center; gap:3px; width:20px; }
+    .pm-north span { font-size:11px; letter-spacing:.12em; }
+    .pm-caption { font-size:10px; letter-spacing:.2em; text-transform:uppercase; }
+    @media (max-width:860px) { .plan-meta { display:none; } }
 
-    /* ── Card ──────────────────────────────────────────────── */
+    /* ── Navigation bar ─────────────────────────────────────── */
+    .bar { flex:0 0 auto; position:relative; z-index:2; background:var(--bg); display:flex; flex-direction:row; align-items:center; justify-content:space-between; gap:clamp(14px,2vw,24px); padding:18px clamp(16px,3vw,28px) 14px; border-bottom:1px solid rgba(215,239,255,.10); }
+    .suite-nav { display:flex; align-items:center; justify-content:flex-end; gap:8px; flex-wrap:nowrap; width:auto; margin-left:auto; }
+    .suite-link { min-height:38px; display:inline-flex; align-items:center; justify-content:center; border:1px solid rgba(215,239,255,.10); background:transparent; color:rgba(215,239,255,0.55); text-decoration:none; font-size:12px; letter-spacing:.08em; text-transform:uppercase; padding:10px 13px; white-space:nowrap; transition:border-color .16s ease,color .16s ease,background .16s ease; }
+    .suite-link:hover { border-color:rgba(215,239,255,.32); color:var(--fg-1); background:rgba(215,239,255,.045); }
+    .suite-link[aria-current="page"] { border-color:var(--sl-cool-blue); color:var(--sl-cool-blue); }
+    .brand { display:flex; align-items:center; justify-content:flex-start; min-width:0; width:auto; flex:0 1 300px; }
+    .logo { height:22px; width:auto; max-width:min(280px,34vw); display:block; flex:0 1 auto; opacity:.88; }
+    .logo path { fill:var(--fg-1); }
+
+    /* ── Content + Glass card ───────────────────────────────── */
+    .content-wrap { flex:1 1 auto; min-height:0; display:flex; align-items:center; justify-content:center; padding:24px 16px; overflow-y:auto; }
     .card {
-      width: 100%;
-      max-width: 420px;
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      padding: 44px 48px 40px;
-      position: relative;
+      width:100%; max-width:500px; position:relative; z-index:1;
+      padding:34px 52px 36px;
+      border:1px solid rgba(255,255,255,0.12);
+      border-radius:26px;
+      background:
+        linear-gradient(135deg, rgba(255,255,255,0.16) 0%, rgba(255,255,255,0.03) 16%, transparent 40%),
+        radial-gradient(130% 72% at 50% -8%, rgba(255,255,255,0.12), transparent 58%),
+        radial-gradient(80% 62% at 0% 100%, rgba(120,180,255,0.10), transparent 55%),
+        radial-gradient(80% 62% at 100% 100%, rgba(255,150,205,0.07), transparent 55%),
+        rgba(16,20,30,0.14);
+      -webkit-backdrop-filter:blur(12px) saturate(185%) brightness(1.06);
+      backdrop-filter:blur(12px) saturate(185%) brightness(1.06);
+      box-shadow:
+        0 26px 70px rgba(0,0,0,0.5),
+        0 0 34px rgba(170,210,245,0.06),
+        inset 0 0 0 1px rgba(255,255,255,0.07),
+        inset 0 1.5px 1px rgba(255,255,255,0.45),
+        inset 0 -2px 4px rgba(255,255,255,0.12),
+        inset 0 0 30px rgba(255,255,255,0.035);
     }
+    .card-info-button { position:absolute; top:18px; right:18px; width:34px; height:34px; display:grid; place-items:center; border:none; background:transparent; color:rgba(215,239,255,.34); cursor:pointer; transition:color .16s ease; }
+    .card-info-button:hover, .card-info-button:focus-visible { color:rgba(215,239,255,.82); }
+    .card-info-button svg { width:15px; height:15px; }
 
-    /* ── Header ────────────────────────────────────────────── */
-    .header { margin-bottom: 36px; }
-    .main-title {
-      font-family: var(--font-display);
-      font-weight: 500;
-      font-size: clamp(20px, 3.5vw, 26px);
-      letter-spacing: -0.025em;
-      line-height: 1.05;
-      color: var(--fg-1);
+    /* ── Card typography ────────────────────────────────────── */
+    .header { margin-bottom:26px; }
+    .main-title { font-family:var(--font-display); font-weight:500; font-size:clamp(20px,3.5vw,26px); letter-spacing:-0.025em; line-height:1.05; color:var(--fg-1); }
+    .divider { height:1px; background:var(--border); margin:0 0 24px; }
+    .field-label { font-size:12px; font-weight:500; letter-spacing:0.14em; text-transform:uppercase; color:var(--fg-2); margin-bottom:12px; }
+
+    /* ── Budget value display ───────────────────────────────── */
+    .budget-display { display:flex; align-items:baseline; gap:7px; margin-bottom:20px; }
+    .budget-val { font-family:var(--font-display); font-weight:500; font-size:clamp(26px,4.5vw,32px); letter-spacing:-0.03em; line-height:1; color:var(--fg-1); }
+    .budget-unit { font-family:var(--font-body); font-size:14px; font-weight:400; color:var(--fg-2); letter-spacing:0.02em; }
+
+    /* ── Apple-style slider ─────────────────────────────────── */
+    .slider-wrap { position:relative; padding:2px 0; }
+    input[type="range"].budget-slider {
+      -webkit-appearance:none; appearance:none;
+      width:100%; height:4px;
+      background:linear-gradient(to right,
+        rgba(215,239,255,0.72) 0%,
+        rgba(215,239,255,0.72) var(--fill, 70.3%),
+        rgba(215,239,255,0.13) var(--fill, 70.3%),
+        rgba(215,239,255,0.13) 100%);
+      border-radius:2px; outline:none; cursor:pointer;
+      margin:6px 0 10px;
     }
-
-    /* ── Divider ───────────────────────────────────────────── */
-    .divider { height: 1px; background: var(--border); margin: 0 0 32px; }
-
-    /* ── Shared label ──────────────────────────────────────── */
-    .field-label {
-      font-size: 12px;
-      font-weight: 500;
-      letter-spacing: 0.14em;
-      text-transform: uppercase;
-      color: var(--fg-2);
-      margin-bottom: 12px;
+    input[type="range"].budget-slider::-webkit-slider-thumb {
+      -webkit-appearance:none;
+      width:22px; height:22px; border-radius:50%;
+      background:#fff;
+      box-shadow:0 2px 8px rgba(0,0,0,0.32), 0 0.5px 1px rgba(0,0,0,0.14), inset 0 1px 0 rgba(255,255,255,0.9);
+      cursor:grab;
+      transition:transform .12s ease, box-shadow .12s ease;
     }
-
-    /* ── Input ─────────────────────────────────────────────── */
-    .input-row {
-      display: flex;
-      align-items: stretch;
-      border: 1px solid var(--border-mid);
-      transition: border-color 180ms ease;
+    input[type="range"].budget-slider:active::-webkit-slider-thumb {
+      cursor:grabbing; transform:scale(1.13);
+      box-shadow:0 4px 14px rgba(0,0,0,0.4), 0 0.5px 1px rgba(0,0,0,0.14), inset 0 1px 0 rgba(255,255,255,0.9);
     }
-    .input-row:focus-within { border-color: var(--border-strong); }
+    input[type="range"].budget-slider::-moz-range-thumb { width:22px; height:22px; border-radius:50%; background:#fff; border:none; box-shadow:0 2px 8px rgba(0,0,0,0.32); cursor:grab; }
+    input[type="range"].budget-slider::-moz-range-track { height:4px; background:rgba(215,239,255,0.13); border-radius:2px; }
+    input[type="range"].budget-slider::-moz-range-progress { background:rgba(215,239,255,0.72); height:4px; border-radius:2px; }
+    .slider-range-labels { display:flex; justify-content:space-between; }
+    .slider-range-labels span { font-size:10px; letter-spacing:0.06em; color:var(--fg-3); }
 
-    .budget-input {
-      flex: 1;
-      background: var(--bg-inset);
-      border: none;
-      outline: none;
-      font-family: var(--font-display);
-      font-weight: 500;
-      font-size: 18px;
-      letter-spacing: -0.02em;
-      color: var(--fg-1);
-      padding: 14px 16px;
-      caret-color: var(--sl-cool-blue);
-      width: 0;
+    /* ── Formula + Result ───────────────────────────────────── */
+    .formula-line { margin-top:14px; font-family:var(--font-body); font-size:13px; font-weight:300; letter-spacing:0.04em; color:var(--fg-3); min-height:18px; transition:opacity 200ms ease; }
+    .formula-line strong { font-weight:400; }
+    .formula-line.dim { opacity:0.2; }
+    .result-section { margin-top:26px; padding-top:26px; border-top:1px solid var(--border); }
+    .result-pct { font-family:var(--font-display); font-weight:500; font-size:clamp(32px,6vw,44px); letter-spacing:-0.035em; line-height:1; color:var(--fg-1); transition:opacity 200ms ease; margin-top:10px; }
+    .result-pct.dim { opacity:0.18; }
+    .result-fee { margin-top:10px; font-family:var(--font-body); font-size:16px; font-weight:400; color:var(--fg-2); letter-spacing:0.01em; min-height:20px; transition:opacity 200ms ease; }
+    .result-fee.dim { opacity:0; }
+
+    /* ── Modal ──────────────────────────────────────────────── */
+    .modal { position:fixed; inset:0; display:grid; place-items:center; padding:22px; background:rgba(5,6,10,.72); backdrop-filter:blur(10px); z-index:50; }
+    .modal[hidden] { display:none; }
+    .dialog { width:min(560px,100%); background:var(--bg-card); box-shadow:0 24px 90px rgba(0,0,0,.48); padding:30px; display:flex; flex-direction:column; max-height:calc(100dvh - 44px); }
+    .dialog h2 { font-family:var(--font-display); font-size:28px; line-height:1.05; letter-spacing:-.03em; margin-bottom:16px; }
+    .dialog p { color:var(--fg-2); line-height:1.55; margin-bottom:16px; }
+    .dialog-scroll { overflow-y:auto; flex:1 1 auto; min-height:0; }
+    .dialog-actions { display:flex; gap:10px; flex-wrap:wrap; margin-top:24px; flex-shrink:0; }
+    .btn { min-height:44px; border:1px solid var(--border); background:transparent; color:var(--fg-1); font:inherit; padding:12px 16px; cursor:pointer; text-decoration:none; }
+    .btn.primary { background:var(--sl-cool-blue); border-color:var(--sl-cool-blue); color:var(--bg); font-weight:500; }
+    .dialog a { color:inherit; text-decoration:underline; }
+    :focus-visible { outline:2px solid var(--sl-cool-blue); outline-offset:3px; }
+
+    /* ── Responsive ─────────────────────────────────────────── */
+    @media (max-width:760px) {
+      .bar { flex-direction:column; justify-content:center; gap:18px; }
+      .brand { justify-content:center; width:100%; flex:none; }
+      .logo { height:20px; max-width:min(300px,72vw); }
+      .suite-nav { justify-content:center; width:100%; margin-left:0; flex-wrap:nowrap; }
+      .suite-link { flex:1 1 0; min-width:0; font-size:11px; padding:8px 6px; letter-spacing:.06em; }
+      .card { padding:24px 28px 30px; border-radius:22px; }
+      .card-info-button { top:14px; right:14px; }
+      .gen-wall { stroke:rgba(215,239,255,.64); }
+      .gen-room { stroke:rgba(215,239,255,.46); }
+      .gen-road { stroke:rgba(215,239,255,.28); }
     }
-    .budget-input::placeholder { color: var(--fg-3); }
-    .budget-input::-webkit-outer-spin-button,
-    .budget-input::-webkit-inner-spin-button { -webkit-appearance: none; }
-    .budget-input[type=number] { -moz-appearance: textfield; }
-
-    .input-unit {
-      display: flex;
-      align-items: center;
-      padding: 0 14px;
-      background: var(--bg-inset);
-      border-left: 1px solid var(--border);
-      font-size: 12px;
-      font-weight: 500;
-      letter-spacing: 0.08em;
-      color: var(--fg-3);
-      white-space: nowrap;
-      user-select: none;
-    }
-
-    /* ── Error ─────────────────────────────────────────────── */
-    .error-msg {
-      font-size: 12px;
-      color: rgba(181, 55, 31, 0.85);
-      letter-spacing: 0.04em;
-      margin-top: 6px;
-      height: 0;
-      overflow: hidden;
-      opacity: 0;
-      transition: opacity 180ms ease;
-    }
-    .error-msg.visible { opacity: 1; height: auto; }
-
-    /* ── Formula line (below input) ────────────────────────── */
-    .formula-line {
-      margin-top: 12px;
-      font-family: var(--font-body);
-      font-size: 13px;
-      font-weight: 300;
-      letter-spacing: 0.04em;
-      color: var(--fg-3);
-      min-height: 18px;
-      transition: opacity 200ms ease;
-    }
-    .formula-line strong { font-weight: 400; }
-    .formula-line.dim { opacity: 0.2; }
-
-    /* ── Result (flipped) ──────────────────────────────────── */
-    .result-section {
-      margin-top: 32px;
-      padding-top: 32px;
-      border-top: 1px solid var(--border);
-    }
-
-    /* PRIMARY: big effective % */
-    .result-pct {
-      font-family: var(--font-display);
-      font-weight: 500;
-      font-size: clamp(32px, 6vw, 44px);
-      letter-spacing: -0.035em;
-      line-height: 1;
-      color: var(--fg-1);
-      transition: opacity 200ms ease;
-      margin-top: 10px;
-    }
-    .result-pct.dim { opacity: 0.18; }
-
-    /* SECONDARY: small € fee */
-    .result-fee {
-      margin-top: 10px;
-      font-family: var(--font-body);
-      font-size: 16px;
-      font-weight: 400;
-      color: var(--fg-2);
-      letter-spacing: 0.01em;
-      min-height: 20px;
-      transition: opacity 200ms ease;
-    }
-    .result-fee.dim { opacity: 0; }
-
-
-    /* ── Navigation (identical to profil/portfolio) ──────── */
-    .bar { flex: 0 0 auto; position: relative; display: flex; flex-direction: row; align-items: center; justify-content: space-between; gap: clamp(14px, 2vw, 24px); padding: 18px clamp(16px, 3vw, 28px) 14px; border-bottom: 1px solid rgba(215,239,255,.10); }
-    .suite-nav { display: flex; align-items: center; justify-content: flex-end; gap: 8px; flex-wrap: nowrap; width: auto; margin-left: auto; }
-    .suite-link { min-height: 38px; display: inline-flex; align-items: center; justify-content: center; border: 1px solid rgba(215,239,255,.10); background: transparent; color: rgba(215,239,255,0.55); text-decoration: none; font-size: 12px; letter-spacing: .08em; text-transform: uppercase; padding: 10px 13px; white-space: nowrap; transition: border-color .16s ease, color .16s ease, background .16s ease; }
-    .suite-link:hover { border-color: rgba(215,239,255,.32); color: var(--fg-1); background: rgba(215,239,255,.045); }
-    .suite-link[aria-current="page"] { border-color: var(--sl-cool-blue); color: var(--sl-cool-blue); }
-    .brand { display: flex; align-items: center; justify-content: flex-start; min-width: 0; width: auto; flex: 0 1 300px; }
-    .logo { height: 22px; width: auto; max-width: min(280px, 34vw); display: block; flex: 0 1 auto; opacity: .88; }
-    .logo path { fill: var(--fg-1); }
-    .content-wrap { flex: 1 1 auto; min-height: 0; display: flex; align-items: center; justify-content: center; padding: 24px 16px; overflow-y: auto; }
-    .card-info-button { position: absolute; top: 18px; right: 18px; width: 34px; height: 34px; display: grid; place-items: center; border: none; background: transparent; color: rgba(215,239,255,.34); font: 500 13px/1 var(--font-display); cursor: pointer; transition: color .16s ease; }
-    .card-info-button:hover, .card-info-button:focus-visible { color: rgba(215,239,255,.82); }
-    .card-info-button svg { width: 15px; height: 15px; }
-    @media (max-width: 760px) { .bar { flex-direction: column; justify-content: center; gap: 18px; } .brand { justify-content: center; width: 100%; flex: none; } .logo { height: 20px; max-width: min(300px, 72vw); } .suite-nav { justify-content: center; width: 100%; margin-left: 0; flex-wrap: nowrap; } .suite-link { flex: 1 1 0; min-width: 0; font-size: 11px; padding: 8px 6px; letter-spacing: .06em; } .card { padding: 34px 28px 32px; } .card-info-button { top: 14px; right: 14px; } }
-
-    /* ── Intro modal ──────────────────────────────────────── */
-    .modal { position: fixed; inset: 0; display: grid; place-items: center; padding: 22px; background: rgba(5,6,10,.72); backdrop-filter: blur(10px); z-index: 50; }
-    .modal[hidden] { display: none; }
-    .dialog { width: min(560px, 100%); background: var(--bg-card); box-shadow: 0 24px 90px rgba(0,0,0,.48); padding: 30px; display: flex; flex-direction: column; max-height: calc(100dvh - 44px); }
-    .dialog h2 { font-family: var(--font-display); font-size: 28px; line-height: 1.05; letter-spacing: -.03em; margin-bottom: 16px; }
-    .dialog p { color: var(--fg-2); line-height: 1.55; margin-bottom: 16px; }
-    .dialog-scroll { overflow-y: auto; flex: 1 1 auto; min-height: 0; }
-    .dialog-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 24px; flex-shrink: 0; }
-    .btn { min-height: 44px; border: 1px solid var(--border); background: transparent; color: var(--fg-1); font: inherit; padding: 12px 16px; cursor: pointer; text-decoration: none; }
-    .btn.primary { background: var(--sl-cool-blue); border-color: var(--sl-cool-blue); color: var(--bg); font-weight: 500; }
-    .dialog a { color: inherit; text-decoration: underline; }
-    :focus-visible { outline: 2px solid var(--sl-cool-blue); outline-offset: 3px; }
-
   </style>
 </head>
 <body>
-  <div class="app">
-  <header class="bar" aria-label="Studio Lucin Navigation">
-    <a class="brand" href="https://www.studiolucin.de/" target="_blank" rel="noopener noreferrer" aria-label="Studio Lucin Website"><svg class="logo" viewBox="0 0 1058.812 138.706" role="img" aria-label="Studio Lucin" xmlns="http://www.w3.org/2000/svg"><path class="cls-1" d="M448.074,85.857c0-31.895,17.802-51.737,48.027-51.737,30.225,0,47.843,19.841,47.843,51.737s-17.618,51.922-47.843,51.922c-30.225,0-48.027-20.027-48.027-51.922ZM526.142,85.857c0-22.252-10.199-37.829-30.041-37.829-19.842,0-30.225,15.577-30.225,37.829,0,22.252,10.383,38.015,30.225,38.015s30.041-15.762,30.041-38.015Z"/><path class="cls-1" d="M82.888,39.127c-1.853-15.205-13.35-24.292-31.152-24.292-19.287,0-31.339,8.53-31.339,22.067,0,12.054,10.941,17.431,27.258,20.769l14.464,2.967c24.107,5.007,42.093,10.941,42.093,39.683,0,23.551-23.736,38.386-52.105,38.386-32.269,0-51.552-13.908-52.108-43.021h18.541c.743,19.47,13.724,28.186,33.566,28.186,19.468,0,33.192-8.716,33.376-22.624.187-15.947-11.31-19.656-30.409-23.55l-14.467-2.967C17.243,69.91,1.853,60.452,1.853,38.2,1.853,15.391,24.291,0,51.736,0c25.96,0,47.656,11.868,49.696,39.127h-18.544Z"/><path class="cls-1" d="M173.446,50.253h-19.655s0,62.678,0,62.678c0,5.934,1.853,8.715,7.416,8.715h11.313s0,13.908,0,13.908h-14.464c-13.908,0-21.883-3.894-21.883-21.139V50.253s-15.946,0-15.946,0v-13.908s15.946,0,15.946,0V12.424s17.618,0,17.618,0v23.921s19.655,0,19.655,0v13.908Z"/><path class="cls-1" d="M277.973,120.348l.371,15.205h-17.802s-.371-15.205-.371-15.205h-.555c-3.525,8.344-14.651,17.431-31.339,17.431-21.327,0-34.493-13.166-34.493-35.789V36.345s17.802,0,17.802,0v63.604c0,15.391,7.419,23.921,21.327,23.921,16.688,0,27.258-12.61,27.258-30.226v-57.3s17.802,0,17.802,0v84.003Z"/><path class="cls-1" d="M341.332,34.12c13.724,0,25.776,7.232,30.784,14.464h.184V3.152s17.802,0,17.802,0v108.295s.558,24.106.558,24.106h-17.802s-.558-14.093-.558-14.093h-.184c-3.894,8.715-16.133,16.318-31.523,16.318-27.074,0-44.692-19.1-44.692-51.922,0-35.048,20.956-51.737,45.431-51.737ZM344.115,48.028c-19.1,0-30.412,15.762-30.412,37.829,0,22.067,11.313,38.015,30.412,38.015,19.1,0,30.041-15.948,30.041-38.015,0-22.067-10.941-37.829-30.041-37.829Z"/><path class="cls-1" d="M413.224,22.067V3.152s19.287,0,19.287,0v18.914s-19.287,0-19.287,0ZM413.491,135.554V36.345s17.802,0,17.802,0v99.208s-17.802,0-17.802,0Z"/><path class="cls-1" d="M639.826,119.791h62.307s0,15.762,0,15.762h-80.848s0-132.401,0-132.401h18.541s0,116.639,0,116.639Z"/><path class="cls-1" d="M801.284,120.348l.371,15.205h-17.802s-.371-15.205-.371-15.205h-.555c-3.522,8.344-14.651,17.431-31.339,17.431-21.324,0-34.49-13.166-34.49-35.789V36.345s17.802,0,17.802,0v63.604c0,15.391,7.416,23.921,21.324,23.921,16.688,0,27.258-12.61,27.258-30.226v-57.3s17.802,0,17.802,0v84.003Z"/><path class="cls-1" d="M820.374,85.857c0-31.895,17.618-51.737,48.585-51.737,25.96,0,41.722,13.908,43.02,32.266h-17.802c-2.224-11.682-12.052-18.358-25.218-18.358-20.769,0-30.784,15.577-30.784,37.829s10.015,38.015,30.784,38.015c12.795,0,23.736-5.934,25.96-19.285h17.802c-3.338,22.067-21.695,33.193-43.762,33.193-30.968,0-48.585-20.027-48.585-51.922Z"/><path class="cls-1" d="M931.529,22.066V3.152s19.284,0,19.284,0v18.914s-19.284,0-19.284,0ZM932.272,135.553V36.345s17.802,0,17.802,0v99.208s-17.802,0-17.802,0Z"/><path class="cls-1" d="M1058.812,70.094v65.459s-17.802,0-17.802,0v-63.604c0-15.391-8.53-23.921-22.438-23.921-16.688,0-27.258,12.61-27.258,30.226v57.3s-17.802,0-17.802,0V51.551s-.371-15.205-.371-15.205h17.802s.371,15.205.371,15.205h.555c3.522-8.344,14.651-17.431,31.339-17.431,21.324,0,35.604,13.351,35.604,35.974Z"/></svg></a>
-    <nav class="suite-nav" aria-label="Bereiche">
-      <a class="suite-link" href="https://www.studiolucin.de/profil" data-nav>Profil</a>
-      <a class="suite-link" href="https://www.studiolucin.de/portfolio" data-nav>Portfolio</a>
-      <a class="suite-link" aria-current="page" href="https://www.studiolucin.de/rechner" data-nav>Rechner</a>
-    </nav>
-  </header>
 
-  <div class="content-wrap">
-  <main class="card" role="main">
+  <!-- Generativer Lageplan-Hintergrund -->
+  <svg id="planBg" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <defs>
+      <radialGradient id="lampGlow">
+        <stop offset="0%"   stop-color="#D7EFFF" stop-opacity=".72"/>
+        <stop offset="45%"  stop-color="#A9D9F4" stop-opacity=".2"/>
+        <stop offset="100%" stop-color="#D7EFFF" stop-opacity="0"/>
+      </radialGradient>
+    </defs>
+    <g id="plan"></g>
+  </svg>
 
-    <button class="card-info-button" type="button" id="openIntro" aria-label="Info zum Honorarrechner" title="Info zum Honorarrechner">
-      <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5"/><path d="M12 8h.01"/></svg>
-    </button>
-    <header class="header">
-      <h1 class="main-title">Honorarrechner</h1>
-    </header>
-
-    <div class="divider" role="separator"></div>
-
-    <!-- Input -->
-    <section aria-label="Eingabe">
-      <p class="field-label">Projektbudget</p>
-      <div class="input-row">
-        <input class="budget-input" id="budget" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" value="400" aria-label="Projektbudget">
-        <span class="input-unit" aria-hidden="true">Mio. €</span>
-      </div>
-      <p class="error-msg" id="error" role="alert" aria-live="polite">
-        Bitte ein Projektbudget größer als 0 eingeben.
-      </p>
-      <p class="formula-line" id="formula-box"></p>
-    </section>
-
-    <!-- Result — flipped -->
-    <section class="result-section" aria-label="Ergebnis">
-      <p class="field-label">Honorar</p>
-      <p class="result-pct" id="result-pct" aria-live="polite">—</p>
-      <p class="result-fee" id="result-fee"></p>
-    </section>
-
-
-
-  <div class="modal" id="introModal" role="dialog" aria-modal="true" aria-labelledby="introTitle" hidden>
-    <div class="dialog">
-      <div class="dialog-scroll">
-        <h2 id="introTitle">So funktioniert unser Preissystem</h2>
-        <p>Jede Projektidentität wird bei uns vollumfänglich entwickelt. Was das konkret beinhaltet, steht im <a href="https://www.studiolucin.de/profil" target="_blank" rel="noopener noreferrer">Unternehmensprofil</a> unter „Leistungen", Seite&nbsp;8.</p>
-        <p>Für die Vergütung haben wir eine eigene Formel entwickelt. Das Honorar setzt sich zusammen aus einer Basis von 12.000&nbsp;€ und wächst mit dem Projektbudget, wobei der prozentuale Anteil am Gesamtvolumen degressiv sinkt.</p>
-        <p>Ein Projekt mit doppeltem Budget bedeutet nicht doppelten Aufwand an Konzeption. Ein linear steigendes Vergütungsmodell würde diesen Unterschied ignorieren. Unsere Formel berücksichtigt ihn.</p>
-      </div>
-      <div class="dialog-actions">
-        <button class="btn primary" type="button" id="closeIntro">Verstanden</button>
-      </div>
+  <!-- Nordpfeil + Bildunterschrift -->
+  <div class="plan-meta" aria-hidden="true">
+    <div class="pm-north">
+      <span>N</span>
+      <svg width="20" height="34" viewBox="0 0 20 34" fill="none" stroke="currentColor" xmlns="http://www.w3.org/2000/svg">
+        <line x1="10" y1="32" x2="10" y2="9" stroke-width="1.1"/>
+        <path d="M10 3 L14 13 L10 10 L6 13 Z" fill="currentColor" stroke="none"/>
+      </svg>
     </div>
+    <div class="pm-caption" id="pm-count">Lageplan · Wohnquartier</div>
   </div>
 
+  <div class="app">
+    <header class="bar" aria-label="Studio Lucin Navigation">
+      <a class="brand" href="https://www.studiolucin.de/" target="_blank" rel="noopener noreferrer" aria-label="Studio Lucin Website">
+        <svg class="logo" viewBox="0 0 1058.812 138.706" role="img" aria-label="Studio Lucin" xmlns="http://www.w3.org/2000/svg">
+          <path class="cls-1" d="M448.074,85.857c0-31.895,17.802-51.737,48.027-51.737,30.225,0,47.843,19.841,47.843,51.737s-17.618,51.922-47.843,51.922c-30.225,0-48.027-20.027-48.027-51.922ZM526.142,85.857c0-22.252-10.199-37.829-30.041-37.829-19.842,0-30.225,15.577-30.225,37.829,0,22.252,10.383,38.015,30.225,38.015s30.041-15.762,30.041-38.015Z"/>
+          <path class="cls-1" d="M82.888,39.127c-1.853-15.205-13.35-24.292-31.152-24.292-19.287,0-31.339,8.53-31.339,22.067,0,12.054,10.941,17.431,27.258,20.769l14.464,2.967c24.107,5.007,42.093,10.941,42.093,39.683,0,23.551-23.736,38.386-52.105,38.386-32.269,0-51.552-13.908-52.108-43.021h18.541c.743,19.47,13.724,28.186,33.566,28.186,19.468,0,33.192-8.716,33.376-22.624.187-15.947-11.31-19.656-30.409-23.55l-14.467-2.967C17.243,69.91,1.853,60.452,1.853,38.2,1.853,15.391,24.291,0,51.736,0c25.96,0,47.656,11.868,49.696,39.127h-18.544Z"/>
+          <path class="cls-1" d="M173.446,50.253h-19.655s0,62.678,0,62.678c0,5.934,1.853,8.715,7.416,8.715h11.313s0,13.908,0,13.908h-14.464c-13.908,0-21.883-3.894-21.883-21.139V50.253s-15.946,0-15.946,0v-13.908s15.946,0,15.946,0V12.424s17.618,0,17.618,0v23.921s19.655,0,19.655,0v13.908Z"/>
+          <path class="cls-1" d="M277.973,120.348l.371,15.205h-17.802s-.371-15.205-.371-15.205h-.555c-3.525,8.344-14.651,17.431-31.339,17.431-21.327,0-34.493-13.166-34.493-35.789V36.345s17.802,0,17.802,0v63.604c0,15.391,7.419,23.921,21.327,23.921,16.688,0,27.258-12.61,27.258-30.226v-57.3s17.802,0,17.802,0v84.003Z"/>
+          <path class="cls-1" d="M341.332,34.12c13.724,0,25.776,7.232,30.784,14.464h.184V3.152s17.802,0,17.802,0v108.295s.558,24.106.558,24.106h-17.802s-.558-14.093-.558-14.093h-.184c-3.894,8.715-16.133,16.318-31.523,16.318-27.074,0-44.692-19.1-44.692-51.922,0-35.048,20.956-51.737,45.431-51.737ZM344.115,48.028c-19.1,0-30.412,15.762-30.412,37.829,0,22.067,11.313,38.015,30.412,38.015,19.1,0,30.041-15.948,30.041-38.015,0-22.067-10.941-37.829-30.041-37.829Z"/>
+          <path class="cls-1" d="M413.224,22.067V3.152s19.287,0,19.287,0v18.914s-19.287,0-19.287,0ZM413.491,135.554V36.345s17.802,0,17.802,0v99.208s-17.802,0-17.802,0Z"/>
+          <path class="cls-1" d="M639.826,119.791h62.307s0,15.762,0,15.762h-80.848s0-132.401,0-132.401h18.541s0,116.639,0,116.639Z"/>
+          <path class="cls-1" d="M801.284,120.348l.371,15.205h-17.802s-.371-15.205-.371-15.205h-.555c-3.522,8.344-14.651,17.431-31.339,17.431-21.324,0-34.49-13.166-34.49-35.789V36.345s17.802,0,17.802,0v63.604c0,15.391,7.416,23.921,21.324,23.921,16.688,0,27.258-12.61,27.258-30.226v-57.3s17.802,0,17.802,0v84.003Z"/>
+          <path class="cls-1" d="M820.374,85.857c0-31.895,17.618-51.737,48.585-51.737,25.96,0,41.722,13.908,43.02,32.266h-17.802c-2.224-11.682-12.052-18.358-25.218-18.358-20.769,0-30.784,15.577-30.784,37.829s10.015,38.015,30.784,38.015c12.795,0,23.736-5.934,25.96-19.285h17.802c-3.338,22.067-21.695,33.193-43.762,33.193-30.968,0-48.585-20.027-48.585-51.922Z"/>
+          <path class="cls-1" d="M931.529,22.066V3.152s19.284,0,19.284,0v18.914s-19.284,0-19.284,0ZM932.272,135.553V36.345s17.802,0,17.802,0v99.208s-17.802,0-17.802,0Z"/>
+          <path class="cls-1" d="M1058.812,70.094v65.459s-17.802,0-17.802,0v-63.604c0-15.391-8.53-23.921-22.438-23.921-16.688,0-27.258,12.61-27.258,30.226v57.3s-17.802,0-17.802,0V51.551s-.371-15.205-.371-15.205h17.802s.371,15.205.371,15.205h.555c3.522-8.344,14.651-17.431,31.339-17.431,21.324,0,35.604,13.351,35.604,35.974Z"/>
+        </svg>
+      </a>
+      <nav class="suite-nav" aria-label="Bereiche">
+        <a class="suite-link" href="https://www.studiolucin.de/profil" data-nav>Profil</a>
+        <a class="suite-link" href="https://www.studiolucin.de/portfolio" data-nav>Portfolio</a>
+        <a class="suite-link" aria-current="page" href="https://www.studiolucin.de/rechner" data-nav>Rechner</a>
+      </nav>
+    </header>
+
+    <div class="content-wrap">
+      <main class="card" role="main">
+
+        <button class="card-info-button" type="button" id="openIntro" aria-label="Info zum Honorarrechner" title="Info zum Honorarrechner">
+          <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5"/><path d="M12 8h.01"/></svg>
+        </button>
+
+        <header class="header">
+          <h1 class="main-title">Honorarrechner</h1>
+        </header>
+
+        <div class="divider" role="separator"></div>
+
+        <section aria-label="Eingabe">
+          <p class="field-label">Projektbudget</p>
+          <div class="budget-display" aria-live="polite">
+            <span class="budget-val" id="budget-display">400</span>
+            <span class="budget-unit">Mio. €</span>
+          </div>
+          <div class="slider-wrap">
+            <input type="range" class="budget-slider" id="budget" min="0" max="1000"
+              aria-label="Projektbudget in Mio. Euro" aria-valuemin="1" aria-valuemax="5000">
+          </div>
+          <div class="slider-range-labels">
+            <span>1 Mio. €</span>
+            <span>5.000 Mio. €</span>
+          </div>
+          <p class="formula-line" id="formula-box"></p>
+        </section>
+
+        <section class="result-section" aria-label="Ergebnis">
+          <p class="field-label">Honorar</p>
+          <p class="result-pct" id="result-pct" aria-live="polite">—</p>
+          <p class="result-fee" id="result-fee"></p>
+        </section>
+
+      </main>
+    </div>
+
+    <div class="modal" id="introModal" role="dialog" aria-modal="true" aria-labelledby="introTitle" hidden>
+      <div class="dialog">
+        <div class="dialog-scroll">
+          <h2 id="introTitle">So funktioniert unser Preissystem</h2>
+          <p>Jede Projektidentität wird bei uns vollumfänglich entwickelt. Was das konkret beinhaltet, steht im <a href="https://www.studiolucin.de/profil" target="_blank" rel="noopener noreferrer">Unternehmensprofil</a> unter „Leistungen", Seite&nbsp;8.</p>
+          <p>Für die Vergütung haben wir eine eigene Formel entwickelt. Das Honorar setzt sich zusammen aus einer Basis von 12.000&nbsp;€ und wächst mit dem Projektbudget, wobei der prozentuale Anteil am Gesamtvolumen degressiv sinkt.</p>
+          <p>Ein Projekt mit doppeltem Budget bedeutet nicht doppelten Aufwand an Konzeption. Ein linear steigendes Vergütungsmodell würde diesen Unterschied ignorieren. Unsere Formel berücksichtigt ihn.</p>
+        </div>
+        <div class="dialog-actions">
+          <button class="btn primary" type="button" id="closeIntro">Verstanden</button>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /.app -->
 
   <script>
   (function () {
 
-    /* ── Intro modal ──────────────────────────────────────── */
-    const INTRO_KEY = 'sl_rechner_seen';
-    const introModal = document.getElementById("introModal");
-    const openIntro = document.getElementById("openIntro");
-    const closeIntro = document.getElementById("closeIntro");
+    /* ── localStorage guard (preview-safe) ───────────────── */
+    function lsGet(k) { try { return localStorage.getItem(k); } catch(e) { return null; } }
+    function lsSet(k, v) { try { localStorage.setItem(k, v); } catch(e) {} }
+
+    /* ── Intro modal ─────────────────────────────────────── */
+    const INTRO_KEY  = 'sl_rechner_seen';
+    const introModal = document.getElementById('introModal');
+    const openIntro  = document.getElementById('openIntro');
+    const closeIntro = document.getElementById('closeIntro');
     function showIntro() { introModal.hidden = false; closeIntro.focus(); }
-    function hideIntro() { introModal.hidden = true; openIntro.focus(); }
-    openIntro.addEventListener("click", showIntro);
-    closeIntro.addEventListener("click", () => { localStorage.setItem(INTRO_KEY, '1'); hideIntro(); });
-    introModal.addEventListener("click", (event) => { if (event.target === introModal) { localStorage.setItem(INTRO_KEY, '1'); hideIntro(); } });
-    document.addEventListener("keydown", (event) => { if (event.key === "Escape" && !introModal.hidden) { localStorage.setItem(INTRO_KEY, '1'); hideIntro(); } });
-    if (!localStorage.getItem(INTRO_KEY)) { setTimeout(showIntro, 120); }
+    function hideIntro() { introModal.hidden = true;  openIntro.focus(); }
+    openIntro.addEventListener('click', showIntro);
+    closeIntro.addEventListener('click', () => { lsSet(INTRO_KEY, '1'); hideIntro(); });
+    introModal.addEventListener('click', e => { if (e.target === introModal) { lsSet(INTRO_KEY, '1'); hideIntro(); } });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape' && !introModal.hidden) { lsSet(INTRO_KEY, '1'); hideIntro(); } });
+    if (!lsGet(INTRO_KEY)) setTimeout(showIntro, 120);
 
+    /* ── Slider / Calculator ─────────────────────────────── */
+    const slider    = document.getElementById('budget');
+    const displayEl = document.getElementById('budget-display');
+    const pctEl     = document.getElementById('result-pct');
+    const feeEl     = document.getElementById('result-fee');
+    const formulaEl = document.getElementById('formula-box');
 
-    /* ── Calculator logic ─────────────────────────────────── */
-    const input     = document.getElementById("budget");
-    const pctEl     = document.getElementById("result-pct");
-    const feeEl     = document.getElementById("result-fee");
-    const errorEl   = document.getElementById("error");
-    const formulaEl = document.getElementById("formula-box");
+    const B_MAX = 5000;
 
-    function parseVal(raw) { return parseFloat(raw.trim().replace(",", ".")); }
+    function sliderToValue(s) { return Math.exp(s / 1000 * Math.log(B_MAX)); }
+    function valueToSlider(v) { return Math.round(Math.log(v) / Math.log(B_MAX) * 1000); }
 
-    function fmtEuro(n) {
-      return n.toLocaleString("de-DE", { minimumFractionDigits: 0, maximumFractionDigits: 0 }) + "\u202f€";
+    function fmtBudget(b) {
+      if (b >= 10) return Math.round(b).toLocaleString('de-DE');
+      return b.toLocaleString('de-DE', { maximumFractionDigits: 1 });
     }
+    function fmtEuro(n) { return n.toLocaleString('de-DE', { minimumFractionDigits:0, maximumFractionDigits:0 }) + ' €'; }
     function fmtPct(p) {
       const d = p >= 1 ? 2 : 3;
-      return p.toLocaleString("de-DE", { minimumFractionDigits: d, maximumFractionDigits: d }) + "\u202f%";
+      return p.toLocaleString('de-DE', { minimumFractionDigits:d, maximumFractionDigits:d }) + ' %';
     }
     function fmtB(b) {
-      return b % 1 === 0
-        ? b.toLocaleString("de-DE")
-        : b.toLocaleString("de-DE", { maximumFractionDigits: 2 });
+      return b % 1 === 0 ? b.toLocaleString('de-DE') : b.toLocaleString('de-DE', { maximumFractionDigits:2 });
     }
-    function effectivePct(B) { return 1.2 * Math.pow(B, -0.65); }
+
+    let currentB = 400;
 
     function calculate() {
-      const raw   = input.value;
-      const B     = parseVal(raw);
-      const valid = raw.trim() !== "" && !isNaN(B) && B > 0;
-
-      errorEl.classList.toggle("visible", !valid && raw.trim() !== "");
-
-      if (!valid) {
-        pctEl.textContent = "—"; pctEl.classList.add("dim");
-        feeEl.textContent = "";  feeEl.classList.add("dim");
-        formulaEl.innerHTML = ""; formulaEl.classList.add("dim");
-        return;
-      }
-
+      const B = currentB;
       const honorar = Math.round(12000 * Math.pow(B, 0.35));
-      const pct     = effectivePct(B);
-
-      pctEl.textContent = fmtEuro(honorar);
-      pctEl.classList.remove("dim");
-
-      feeEl.textContent = "entspricht " + fmtPct(pct);
-      feeEl.classList.remove("dim");
-
+      const pct     = 1.2 * Math.pow(B, -0.65);
+      pctEl.textContent = fmtEuro(honorar); pctEl.classList.remove('dim');
+      feeEl.textContent = 'entspricht ' + fmtPct(pct); feeEl.classList.remove('dim');
       formulaEl.innerHTML =
-        "H\u2009=\u200912.000\u2009×\u2009<strong>"
-        + fmtB(B)
-        + "<sup style=\"font-size:0.7em\">0,35</sup></strong>"
-        + "\u2009=\u2009<strong>" + fmtEuro(honorar) + "</strong>";
-      formulaEl.classList.remove("dim");
+        'H = 12.000 × <strong>' + fmtB(B) +
+        '<sup style="font-size:0.7em">0,35</sup></strong> = <strong>' +
+        fmtEuro(honorar) + '</strong>';
+      formulaEl.classList.remove('dim');
+      renderPlan(houseCount(B), true);
     }
 
-    input.addEventListener("input", calculate);
-    calculate();
+    function updateSlider() {
+      const s = parseInt(slider.value, 10);
+      currentB = sliderToValue(s);
+      slider.style.setProperty('--fill', (s / 10) + '%');
+      displayEl.textContent = fmtBudget(currentB);
+      slider.setAttribute('aria-valuenow', Math.round(currentB));
+      calculate();
+    }
+
+    slider.value = valueToSlider(400);
+    updateSlider();
+    slider.addEventListener('input', updateSlider);
+
+    /* ── Generativer Lageplan ────────────────────────────── */
+    const planBg  = document.getElementById('planBg');
+    const plan    = document.getElementById('plan');
+    const pmCount = document.getElementById('pm-count');
+    const barEl   = document.querySelector('.bar');
+    const M = 22;
+    let stKey = '';
+    const renderedKeys = new Set();
+    const rectMap      = new Map();
+    const svgns = 'http://www.w3.org/2000/svg';
+
+    function houseCount(B) {
+      const n = Math.round(4.60816 * Math.log(B) - 7.6107);
+      return Math.max(2, Math.min(28, n));
+    }
+    function r1(n) { return Math.round(n * 10) / 10; }
+    function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+
+    function mulberry32(a) {
+      return function () {
+        a |= 0; a = a + 0x6D2B79F5 | 0;
+        let t = Math.imul(a ^ a >>> 15, 1 | a);
+        t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+        return ((t ^ t >>> 14) >>> 0) / 4294967296;
+      };
+    }
+
+    function massPath(x, y, w, h, rnd) {
+      const t = rnd(), mn = Math.min(w, h);
+      if (t < 0.18 && mn > 64) {
+        const ix = x + w * 0.3, iy = y + h * 0.3, iw = w * 0.4, ih = h * 0.4;
+        return { d:`M${r1(x)} ${r1(y)} H${r1(x+w)} V${r1(y+h)} H${r1(x)} Z M${r1(ix)} ${r1(iy)} H${r1(ix+iw)} V${r1(iy+ih)} H${r1(ix)} Z`, hole:true, type:'court' };
+      }
+      if (t < 0.4 && mn > 46) {
+        const corner = Math.floor(rnd() * 4);
+        const nw = w * (0.34 + 0.14 * rnd()), nh = h * (0.34 + 0.14 * rnd());
+        let d;
+        if (corner === 0) d = `M${r1(x+nw)} ${r1(y)} H${r1(x+w)} V${r1(y+h)} H${r1(x)} V${r1(y+nh)} H${r1(x+nw)} Z`;
+        else if (corner === 1) d = `M${r1(x)} ${r1(y)} H${r1(x+w-nw)} V${r1(y+nh)} H${r1(x+w)} V${r1(y+h)} H${r1(x)} Z`;
+        else if (corner === 2) d = `M${r1(x)} ${r1(y)} H${r1(x+w)} V${r1(y+h-nh)} H${r1(x+w-nw)} V${r1(y+h)} H${r1(x)} Z`;
+        else d = `M${r1(x)} ${r1(y)} H${r1(x+w)} V${r1(y+h)} H${r1(x+nw)} V${r1(y+h-nh)} H${r1(x)} Z`;
+        return { d, hole:false, type:'L' };
+      }
+      return { d:`M${r1(x)} ${r1(y)} H${r1(x+w)} V${r1(y+h)} H${r1(x)} Z`, hole:false, type:'rect' };
+    }
+
+    function roomSegs(x, y, w, h, type, rnd) {
+      if (type !== 'rect') return [];
+      const segs = [], gf = 0.26;
+      function wall(x1, y1, x2, y2) {
+        const pos = clamp(0.5 + (rnd() - 0.5) * 0.9, 0.22, 0.78);
+        const t0 = pos - gf / 2, t1 = pos + gf / 2;
+        segs.push([r1(x1), r1(y1), r1(x1+(x2-x1)*t0), r1(y1+(y2-y1)*t0)]);
+        segs.push([r1(x1+(x2-x1)*t1), r1(y1+(y2-y1)*t1), r1(x2), r1(y2)]);
+      }
+      const nv = w > 150 ? 2 : w > 78 ? 1 : 0;
+      const nh = h > 150 ? 2 : h > 78 ? 1 : 0;
+      const vs = [], hs = [];
+      if (nv >= 1) vs.push(x + w * (0.32 + 0.18 * rnd()));
+      if (nv >= 2) vs.push(x + w * (0.62 + 0.16 * rnd()));
+      if (nh >= 1) hs.push(y + h * (0.32 + 0.18 * rnd()));
+      if (nh >= 2) hs.push(y + h * (0.62 + 0.16 * rnd()));
+      vs.forEach(sx => wall(sx, y, sx, y+h));
+      hs.forEach(sy => wall(x, sy, x+w, sy));
+      return segs;
+    }
+
+    function buildLayout(N, gl, gt, gw, gh, isEx) {
+      const ratio = gw / gh;
+      let C = 3, R = 2, cw = gw, ch = gh;
+      for (R = 2; R <= 8; R++) {
+        C = clamp(Math.round(R * ratio), 3, 18);
+        cw = gw / C; ch = gh / R;
+        let cap = 0;
+        for (let i = 0; i < C; i++) for (let j = 0; j < R; j++) {
+          const cx = gl + i * cw + cw / 2, cy = gt + j * ch + ch / 2;
+          if (!isEx(cx, cy)) cap++;
+        }
+        if (cap >= N) break;
+      }
+      const cc = (C-1)/2, rc = (R-1)/2, rings = {};
+      for (let i = 0; i < C; i++) for (let j = 0; j < R; j++) {
+        const cx = gl + i*cw + cw/2, cy = gt + j*ch + ch/2;
+        if (isEx(cx, cy)) continue;
+        const ring = Math.max(Math.abs(i-cc), Math.abs(j-rc));
+        const ang  = Math.atan2(j-rc, i-cc);
+        (rings[ring] = rings[ring] || []).push({ i, j, ring, ang });
+      }
+      const keys = Object.keys(rings).map(Number).sort((a,b) => a-b);
+      const out = []; let need = N;
+      for (const k of keys) {
+        const cs = rings[k].sort((a,b) => a.ang - b.ang);
+        if (need >= cs.length) { for (const c of cs) out.push(c); need -= cs.length; }
+        else { const step = cs.length/need; for (let m = 0; m < need; m++) out.push(cs[Math.floor(m*step)]); need = 0; }
+        if (need <= 0) break;
+      }
+      return { cells:out, C, R, cw, ch, gl, gt };
+    }
+
+    function ensureGroups() {
+      let b = document.getElementById('plan-build'), inf = document.getElementById('plan-infra');
+      if (!b)   { b   = document.createElementNS(svgns,'g'); b.id   = 'plan-build'; plan.appendChild(b);   }
+      if (!inf) { inf = document.createElementNS(svgns,'g'); inf.id = 'plan-infra'; plan.appendChild(inf); }
+      return { b, inf };
+    }
+    function appendSVG(parent, str) {
+      const tmp = document.createElementNS(svgns,'g');
+      tmp.innerHTML = str;
+      while (tmp.firstChild) parent.appendChild(tmp.firstChild);
+    }
+
+    function cellRender(c, gl, gt, cw, ch, baseRing) {
+      const cellX = gl + c.i * cw, cellY = gt + c.j * ch;
+      const gut = Math.min(cw, ch) * 0.19;
+      const bx = cellX+gut, by = cellY+gut, bw = cw-2*gut, bh = ch-2*gut;
+      const rnd = mulberry32(((c.i+1)*73856093) ^ ((c.j+1)*19349663));
+      const w = bw*(0.82+0.18*rnd()), h = bh*(0.82+0.18*rnd());
+      const x = bx+(bw-w)*rnd(), y = by+(bh-h)*rnd();
+      const m = massPath(x, y, w, h, rnd);
+      const delay = Math.min(0.5, Math.max(0, c.ring-baseRing)*0.06).toFixed(2);
+      const d2 = (+delay+0.18).toFixed(2);
+      const fr = m.hole ? ' fill-rule="evenodd"' : '';
+      let s = `<path class="gen-floor"${fr} style="animation-delay:${delay}s" d="${m.d}"/>`
+            + `<path class="gen-wall" pathLength="1" style="animation-delay:${delay}s" d="${m.d}"/>`;
+      roomSegs(x, y, w, h, m.type, rnd).forEach(seg =>
+        s += `<line class="gen-room" style="animation-delay:${d2}s" x1="${seg[0]}" y1="${seg[1]}" x2="${seg[2]}" y2="${seg[3]}"/>`);
+      return { str:`<g class="b-grp" data-k="${c.i}_${c.j}">${s}</g>`, rect:{x,y,w,h} };
+    }
+
+    function buildInfra(infraG, occ, rects, C, R, roadW, dotR, glowR, off, animate) {
+      let rd = ''; const ways = []; const hw = roadW / 2;
+      function connect(A, B, horizontal) {
+        if (!A || !B) return;
+        if (horizontal) {
+          const top = Math.max(A.y, B.y), bot = Math.min(A.y+A.h, B.y+B.h);
+          const ax = r1(A.x+A.w), bx = r1(B.x);
+          if (bot-top > roadW+8) {
+            const yy = (top+bot)/2;
+            rd += `M${ax} ${r1(yy-hw)} L${bx} ${r1(yy-hw)} M${ax} ${r1(yy+hw)} L${bx} ${r1(yy+hw)} `;
+            ways.push({ t:'h', x1:ax, x2:bx, y:r1(yy) });
+          } else {
+            const ay = r1(A.y+A.h/2), by2 = r1(B.y+B.h/2), mx = r1((ax+bx)/2);
+            rd += `M${ax} ${ay} L${mx} ${ay} L${mx} ${by2} L${bx} ${by2} `;
+            ways.push({ t:'p', x:mx, y:r1((ay+by2)/2), h:false });
+          }
+        } else {
+          const left = Math.max(A.x, B.x), right = Math.min(A.x+A.w, B.x+B.w);
+          const ay = r1(A.y+A.h), by2 = r1(B.y);
+          if (right-left > roadW+8) {
+            const xx = (left+right)/2;
+            rd += `M${r1(xx-hw)} ${ay} L${r1(xx-hw)} ${by2} M${r1(xx+hw)} ${ay} L${r1(xx+hw)} ${by2} `;
+            ways.push({ t:'v', y1:ay, y2:by2, x:r1(xx) });
+          } else {
+            const ax = r1(A.x+A.w/2), bx2 = r1(B.x+B.w/2), my = r1((ay+by2)/2);
+            rd += `M${ax} ${ay} L${ax} ${my} L${bx2} ${my} L${bx2} ${by2} `;
+            ways.push({ t:'p', x:r1((ax+bx2)/2), y:my, h:true });
+          }
+        }
+      }
+      for (let i = 0; i < C; i++) for (let j = 0; j < R; j++) {
+        const k = i+'_'+j;
+        if (!occ.has(k)) continue;
+        if (occ.has((i+1)+'_'+j)) connect(rects.get(k), rects.get((i+1)+'_'+j), true);
+        if (occ.has(i+'_'+(j+1))) connect(rects.get(k), rects.get(i+'_'+(j+1)), false);
+      }
+      const naR = animate ? '' : ';animation:none;stroke-dashoffset:0';
+      const naL = animate ? '' : ';animation:none;opacity:1';
+      let s = '';
+      if (rd) s += `<path class="gen-road" pathLength="1" style="animation-delay:.4s${naR}" d="${rd.trim()}"/>`;
+      let li = 0; const ts = [0.3, 0.7];
+      function lamp(px, py) {
+        const pd = (li++ % 6) * 0.6;
+        s += `<g class="gen-lamp" style="animation-delay:.55s${naL}">`
+           + `<circle class="l-glow" style="animation-delay:${pd.toFixed(1)}s" cx="${r1(px)}" cy="${r1(py)}" r="${r1(glowR)}" fill="url(#lampGlow)"/>`
+           + `<circle class="l-dot" cx="${r1(px)}" cy="${r1(py)}" r="${r1(dotR)}"/></g>`;
+      }
+      ways.forEach(wy => {
+        if (wy.t === 'h')      { ts.forEach(tt => { const lx = wy.x1+(wy.x2-wy.x1)*tt; lamp(lx, wy.y-off); lamp(lx, wy.y+off); }); }
+        else if (wy.t === 'v') { ts.forEach(tt => { const ly = wy.y1+(wy.y2-wy.y1)*tt; lamp(wy.x-off, ly); lamp(wy.x+off, ly); }); }
+        else { if (wy.h) { lamp(wy.x, wy.y-off); lamp(wy.x, wy.y+off); } else { lamp(wy.x-off, wy.y); lamp(wy.x+off, wy.y); } }
+      });
+      infraG.innerHTML = s;
+    }
+
+    function renderPlan(N, valid) {
+      const groups = ensureGroups(), buildG = groups.b, infraG = groups.inf;
+      const W = planBg.clientWidth  || window.innerWidth;
+      const H = planBg.clientHeight || window.innerHeight;
+      if (!valid || N <= 0) {
+        buildG.innerHTML = ''; infraG.innerHTML = '';
+        renderedKeys.clear(); rectMap.clear(); stKey = '';
+        if (pmCount) pmCount.textContent = 'Lageplan · Wohnquartier';
+        return;
+      }
+      const headerBottom = barEl ? barEl.getBoundingClientRect().bottom : H * 0.1;
+      const gl = M, gt = headerBottom + 12, gw = W - 2*M, gh = (H-M) - gt;
+      if (gw < 80 || gh < 80) {
+        buildG.innerHTML = ''; infraG.innerHTML = '';
+        renderedKeys.clear(); rectMap.clear(); stKey = '';
+        return;
+      }
+      const lay = buildLayout(N, gl, gt, gw, gh, () => false);
+      const { C, R, cw, ch, cells } = lay;
+      const gridSig = C+'x'+R+':'+r1(gl)+':'+r1(gt)+':'+r1(cw)+':'+r1(ch);
+      const fullRebuild = (gridSig !== stKey);
+      const roadW = clamp(cw*0.05, 5, 9), dotR = clamp(cw*0.012, 1.2, 1.9),
+            glowR = clamp(cw*0.05, 3.5, 6.5), off = roadW*0.5+dotR+2;
+      const target = new Set(cells.map(c => c.i+'_'+c.j));
+      let changed = fullRebuild;
+      if (fullRebuild) {
+        buildG.innerHTML = ''; renderedKeys.clear(); rectMap.clear();
+        let s = '';
+        cells.forEach(c => { const r = cellRender(c, gl, gt, cw, ch, 0); s += r.str; rectMap.set(c.i+'_'+c.j, r.rect); renderedKeys.add(c.i+'_'+c.j); });
+        buildG.innerHTML = s; stKey = gridSig;
+      } else {
+        let removed = 0;
+        Array.from(renderedKeys).forEach(k => {
+          if (!target.has(k)) { const el = buildG.querySelector('[data-k="'+k+'"]'); if (el) el.remove(); renderedKeys.delete(k); rectMap.delete(k); removed++; }
+        });
+        const fresh = cells.filter(c => !renderedKeys.has(c.i+'_'+c.j));
+        let baseRing = Infinity;
+        fresh.forEach(c => { if (c.ring < baseRing) baseRing = c.ring; });
+        if (!isFinite(baseRing)) baseRing = 0;
+        let s = '';
+        fresh.forEach(c => { const r = cellRender(c, gl, gt, cw, ch, baseRing); s += r.str; rectMap.set(c.i+'_'+c.j, r.rect); renderedKeys.add(c.i+'_'+c.j); });
+        if (s) appendSVG(buildG, s);
+        changed = (removed > 0 || fresh.length > 0);
+      }
+      if (changed) buildInfra(infraG, target, rectMap, C, R, roadW, dotR, glowR, off, fullRebuild);
+      if (pmCount) pmCount.textContent = 'Lageplan · ' + N + ' Baukörper';
+    }
+
+    /* Neu zeichnen bei Größenänderung */
+    let rzT;
+    window.addEventListener('resize', () => {
+      clearTimeout(rzT);
+      rzT = setTimeout(() => { stKey = ''; calculate(); }, 140);
+    });
+    /* Nach Schrift-Load nochmal messen */
+    setTimeout(() => { stKey = ''; calculate(); }, 400);
+
   })();
   </script>
 
-
-
-</main></div></div>
-<script>
-  document.querySelectorAll('[data-nav]').forEach(function(a) {
-    a.addEventListener('click', function(e) {
-      e.preventDefault();
-      var url = a.getAttribute('href');
-      if (window.top !== window) {
-        window.top.postMessage({ slNavigate: url }, '*');
-      } else {
-        window.location.href = url;
-      }
+  <script>
+    document.querySelectorAll('[data-nav]').forEach(function(a) {
+      a.addEventListener('click', function(e) {
+        e.preventDefault();
+        var url = a.getAttribute('href');
+        if (window.top !== window) {
+          window.top.postMessage({ slNavigate: url }, '*');
+        } else {
+          window.location.href = url;
+        }
+      });
     });
-  });
-</script>
-</body></html>
+  </script>
+
+</body>
+</html>
