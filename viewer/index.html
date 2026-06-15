@@ -370,7 +370,7 @@
         <section aria-label="Eingabe">
           <p class="field-label">Projektbudget</p>
           <div class="budget-display" aria-live="polite">
-            <span class="budget-val" id="budget-display" contenteditable="true" inputmode="decimal" spellcheck="false" autocomplete="off" role="spinbutton" aria-valuemin="1" aria-valuemax="400">400</span>
+            <span class="budget-val" id="budget-display" contenteditable="true" inputmode="decimal" spellcheck="false" autocomplete="off" role="spinbutton" aria-valuemin="1" aria-valuemax="400">70</span>
             <span class="budget-unit">Mio. €</span>
           </div>
           <div class="slider-wrap">
@@ -866,7 +866,7 @@ function tabFromHash() {
     return b % 1 === 0 ? b.toLocaleString('de-DE') : b.toLocaleString('de-DE', { maximumFractionDigits:2 });
   }
 
-  let currentB = 400;
+  let currentB = 70;
 
   function calculate() {
     const B = currentB;
@@ -929,7 +929,7 @@ function tabFromHash() {
   const rectMap      = new Map();
   const svgns = 'http://www.w3.org/2000/svg';
 
-  slider.value = valueToSlider(400);
+  slider.value = valueToSlider(70);
   updateSlider();
   slider.addEventListener('input', updateSlider);
 
