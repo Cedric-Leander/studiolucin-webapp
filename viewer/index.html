@@ -45,7 +45,7 @@
     }
 
     /* ── App shell ──────────────────────────────────────────── */
-    .app { display: flex; flex-direction: column; height: 100dvh; }
+    .app { display: flex; flex-direction: column; height: 100dvh; position: relative; z-index: 1; }
 
     /* ── Header ─────────────────────────────────────────────── */
     .bar {
@@ -162,107 +162,118 @@
     /* ════════════════════════════════════════════════════════
        HONORARRECHNER
        ════════════════════════════════════════════════════════ */
-    .content-wrap { flex: 1 1 auto; min-height: 0; display: flex; align-items: center; justify-content: center; padding: 24px 16px; overflow-y: auto; }
+    /* ── Animated site-plan background ──────────────────── */
+    #planBg { position:fixed; inset:0; width:100%; height:100%; display:block; z-index:-1; pointer-events:none; overflow:hidden; }
+    @keyframes lpDraw  { to { stroke-dashoffset:0; } }
+    @keyframes lpFade  { to { opacity:1; } }
+    @keyframes lpPulse { 0%,100% { opacity:.4; } 50% { opacity:1; } }
+    .gen-floor { fill:rgba(215,239,255,.028); stroke:none; opacity:0; animation:lpFade .55s ease forwards; }
+    .gen-wall  { fill:none; stroke:rgba(215,239,255,.5); stroke-width:1.4; stroke-linejoin:miter; stroke-linecap:square; stroke-dasharray:1; stroke-dashoffset:1; animation:lpDraw .85s ease forwards; }
+    .gen-room  { fill:none; stroke:rgba(215,239,255,.34); stroke-width:1; stroke-linecap:butt; opacity:0; animation:lpFade .55s ease forwards; }
+    .gen-road  { fill:none; stroke:rgba(215,239,255,.2); stroke-width:1; stroke-linecap:round; stroke-linejoin:round; stroke-dasharray:1; stroke-dashoffset:1; animation:lpDraw 1.1s ease forwards; }
+    .gen-lamp  { opacity:0; animation:lpFade .5s ease forwards; }
+    .l-glow    { animation:lpPulse 3.4s ease-in-out infinite; }
+    .l-dot     { fill:#EAF6FF; stroke:none; }
+
+    /* ── Plan meta (north arrow + label) ───────────────── */
+    .plan-meta { position:fixed; left:28px; bottom:24px; z-index:0; pointer-events:none; display:flex; flex-direction:column; gap:14px; color:rgba(215,239,255,.34); font-family:var(--font); }
+    .pm-north  { display:flex; flex-direction:column; align-items:center; gap:3px; width:20px; }
+    .pm-north span { font-size:11px; letter-spacing:.12em; }
+    .pm-caption { font-size:10px; letter-spacing:.2em; text-transform:uppercase; }
+
+    /* ── Honorarrechner: Karte + UI ─────────────────────── */
+    .content-wrap { flex:1 1 auto; min-height:0; display:flex; align-items:center; justify-content:center; padding:24px 16px; overflow-y:auto; }
     .card {
-      width: 100%; max-width: 420px;
-      background: var(--surface);
-      border: 1px solid var(--line);
-      padding: 44px 48px 40px;
-      position: relative;
+      width:100%; max-width:500px; position:relative; z-index:1;
+      padding:34px 52px 36px;
+      border:1px solid rgba(255,255,255,0.12);
+      border-radius:26px;
+      background:
+        linear-gradient(135deg, rgba(255,255,255,0.16) 0%, rgba(255,255,255,0.03) 16%, transparent 40%),
+        radial-gradient(130% 72% at 50% -8%, rgba(255,255,255,0.12), transparent 58%),
+        radial-gradient(80% 62% at 0% 100%, rgba(120,180,255,0.10), transparent 55%),
+        radial-gradient(80% 62% at 100% 100%, rgba(255,150,205,0.07), transparent 55%),
+        rgba(16,20,30,0.14);
+      -webkit-backdrop-filter:blur(12px) saturate(185%) brightness(1.06);
+      backdrop-filter:blur(12px) saturate(185%) brightness(1.06);
+      box-shadow:
+        0 26px 70px rgba(0,0,0,0.5),
+        0 0 34px rgba(170,210,245,0.06),
+        inset 0 0 0 1px rgba(255,255,255,0.07),
+        inset 0 1.5px 1px rgba(255,255,255,0.45),
+        inset 0 -2px 4px rgba(255,255,255,0.12),
+        inset 0 0 30px rgba(255,255,255,0.035);
     }
-    .card-info-button {
-      position: absolute; top: 18px; right: 18px;
-      width: 34px; height: 34px; display: grid; place-items: center;
-      border: none; background: transparent;
-      color: var(--faint); font: 500 13px/1 var(--font-display); cursor: pointer;
-      transition: color .16s ease;
+    .card-info-button { position:absolute; top:18px; right:18px; width:34px; height:34px; display:grid; place-items:center; border:none; background:transparent; color:var(--faint); cursor:pointer; transition:color .16s ease; }
+    .card-info-button:hover, .card-info-button:focus-visible { color:rgba(215,239,255,.82); }
+    .card-info-button svg { width:15px; height:15px; }
+    .header { margin-bottom:26px; }
+    .main-title { font-family:var(--font-display); font-weight:500; font-size:clamp(20px,3.5vw,26px); letter-spacing:-0.025em; line-height:1.05; color:var(--ink); }
+    .divider { height:1px; background:var(--line); margin:0 0 24px; }
+    .field-label { font-size:12px; font-weight:500; letter-spacing:0.14em; text-transform:uppercase; color:var(--muted); margin-bottom:12px; }
+    .budget-display { display:flex; align-items:baseline; gap:7px; margin-bottom:20px; }
+    .budget-val { font-family:var(--font-display); font-weight:500; font-size:clamp(26px,4.5vw,32px); letter-spacing:-0.03em; line-height:1; color:var(--ink); }
+    .budget-unit { font-family:var(--font); font-size:14px; font-weight:400; color:var(--muted); letter-spacing:0.02em; }
+    .slider-wrap { position:relative; padding:2px 0; }
+    input[type="range"].budget-slider {
+      -webkit-appearance:none; appearance:none;
+      width:100%; height:4px;
+      background:linear-gradient(to right,
+        rgba(215,239,255,0.72) 0%,
+        rgba(215,239,255,0.72) var(--fill,70.3%),
+        rgba(215,239,255,0.13) var(--fill,70.3%),
+        rgba(215,239,255,0.13) 100%);
+      border-radius:2px; outline:none; cursor:pointer; margin:6px 0 10px;
     }
-    .card-info-button:hover, .card-info-button:focus-visible { color: rgba(215,239,255,.82); }
-    .card-info-button svg { width: 15px; height: 15px; }
-    .card-header { margin-bottom: 36px; }
-    .card-title {
-      font-family: var(--font-display); font-weight: 500;
-      font-size: clamp(20px, 3.5vw, 26px);
-      letter-spacing: -0.025em; line-height: 1.05; color: var(--ink);
+    input[type="range"].budget-slider::-webkit-slider-thumb {
+      -webkit-appearance:none;
+      width:22px; height:22px; border-radius:50%; background:#fff;
+      box-shadow:0 2px 8px rgba(0,0,0,0.32), 0 0.5px 1px rgba(0,0,0,0.14), inset 0 1px 0 rgba(255,255,255,0.9);
+      cursor:grab; transition:transform .12s ease, box-shadow .12s ease;
     }
-    .divider { height: 1px; background: var(--line); margin: 0 0 32px; }
-    .field-label { font-size: 12px; font-weight: 500; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); margin-bottom: 12px; }
-    .input-row {
-      display: flex; align-items: stretch;
-      border: 1px solid var(--line-mid);
-      transition: border-color 180ms ease;
-    }
-    .input-row:focus-within { border-color: var(--line-strong); }
-    .budget-input {
-      flex: 1; background: var(--inset); border: none; outline: none;
-      font-family: var(--font-display); font-weight: 500; font-size: 18px;
-      letter-spacing: -0.02em; color: var(--ink);
-      padding: 14px 16px; caret-color: var(--accent); width: 0;
-    }
-    .budget-input::placeholder { color: var(--faint); }
-    .budget-input::-webkit-outer-spin-button,
-    .budget-input::-webkit-inner-spin-button { -webkit-appearance: none; }
-    .budget-input[type=number] { -moz-appearance: textfield; }
-    .input-unit {
-      display: flex; align-items: center; padding: 0 14px;
-      background: var(--inset); border-left: 1px solid var(--line);
-      font-size: 12px; font-weight: 500; letter-spacing: 0.08em;
-      color: var(--faint); white-space: nowrap; user-select: none;
-    }
-    .error-msg {
-      font-size: 12px; color: rgba(181,55,31,0.85);
-      letter-spacing: 0.04em; margin-top: 6px;
-      height: 0; overflow: hidden; opacity: 0; transition: opacity 180ms ease;
-    }
-    .error-msg.visible { opacity: 1; height: auto; }
-    .formula-line {
-      margin-top: 12px; font-family: var(--font); font-size: 13px;
-      font-weight: 300; letter-spacing: 0.04em; color: var(--faint);
-      min-height: 18px; transition: opacity 200ms ease;
-    }
-    .formula-line strong { font-weight: 400; }
-    .formula-line.dim { opacity: 0.2; }
-    .result-section { margin-top: 32px; padding-top: 32px; border-top: 1px solid var(--line); }
-    .result-pct {
-      font-family: var(--font-display); font-weight: 500;
-      font-size: clamp(32px, 6vw, 44px);
-      letter-spacing: -0.035em; line-height: 1; color: var(--ink);
-      transition: opacity 200ms ease; margin-top: 10px;
-    }
-    .result-pct.dim { opacity: 0.18; }
-    .result-fee {
-      margin-top: 10px; font-family: var(--font); font-size: 16px;
-      font-weight: 400; color: var(--muted); letter-spacing: 0.01em;
-      min-height: 20px; transition: opacity 200ms ease;
-    }
-    .result-fee.dim { opacity: 0; }
+    input[type="range"].budget-slider:active::-webkit-slider-thumb { cursor:grabbing; transform:scale(1.13); box-shadow:0 4px 14px rgba(0,0,0,0.4), 0 0.5px 1px rgba(0,0,0,0.14), inset 0 1px 0 rgba(255,255,255,0.9); }
+    input[type="range"].budget-slider::-moz-range-thumb { width:22px; height:22px; border-radius:50%; background:#fff; border:none; box-shadow:0 2px 8px rgba(0,0,0,0.32); cursor:grab; }
+    input[type="range"].budget-slider::-moz-range-track { height:4px; background:rgba(215,239,255,0.13); border-radius:2px; }
+    input[type="range"].budget-slider::-moz-range-progress { background:rgba(215,239,255,0.72); height:4px; border-radius:2px; }
+    .slider-range-labels { display:flex; justify-content:space-between; }
+    .slider-range-labels span { font-size:10px; letter-spacing:0.06em; color:var(--faint); }
+    .formula-line { margin-top:14px; font-family:var(--font); font-size:13px; font-weight:300; letter-spacing:0.04em; color:var(--faint); min-height:18px; transition:opacity 200ms ease; }
+    .formula-line strong { font-weight:400; }
+    .formula-line.dim { opacity:0.2; }
+    .result-section { margin-top:26px; padding-top:26px; border-top:1px solid var(--line); }
+    .result-pct { font-family:var(--font-display); font-weight:500; font-size:clamp(32px,6vw,44px); letter-spacing:-0.035em; line-height:1; color:var(--ink); transition:opacity 200ms ease; margin-top:10px; }
+    .result-pct.dim { opacity:0.18; }
+    .result-fee { margin-top:10px; font-family:var(--font); font-size:16px; font-weight:400; color:var(--muted); letter-spacing:0.01em; min-height:20px; transition:opacity 200ms ease; }
+    .result-fee.dim { opacity:0; }
 
-    /* Rechner intro modal */
-    .modal { position: fixed; inset: 0; display: grid; place-items: center; padding: 22px; background: rgba(5,6,10,.72); backdrop-filter: blur(10px); z-index: 50; }
-    .modal[hidden] { display: none; }
-    .dialog { width: min(560px, 100%); background: var(--surface); box-shadow: 0 24px 90px rgba(0,0,0,.48); padding: 30px; display: flex; flex-direction: column; max-height: calc(100dvh - 44px); }
-    .dialog h2 { font-family: var(--font-display); font-size: 28px; line-height: 1.05; letter-spacing: -.03em; margin-bottom: 16px; }
-    .dialog p { color: var(--muted); line-height: 1.55; margin-bottom: 16px; }
-    .dialog-scroll { overflow-y: auto; flex: 1 1 auto; min-height: 0; }
-    .dialog-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 24px; flex-shrink: 0; }
-    .btn { min-height: 44px; border: 1px solid var(--line); background: transparent; color: var(--ink); font: inherit; padding: 12px 16px; cursor: pointer; text-decoration: none; }
-    .btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); font-weight: 500; }
+    /* ── Intro-Modal ─────────────────────────────────────── */
+    .modal { position:fixed; inset:0; display:grid; place-items:center; padding:22px; background:rgba(5,6,10,.72); backdrop-filter:blur(10px); z-index:50; }
+    .modal[hidden] { display:none; }
+    .dialog { width:min(560px,100%); background:var(--surface); box-shadow:0 24px 90px rgba(0,0,0,.48); padding:30px; display:flex; flex-direction:column; max-height:calc(100dvh - 44px); }
+    .dialog h2 { font-family:var(--font-display); font-size:28px; line-height:1.05; letter-spacing:-.03em; margin-bottom:16px; }
+    .dialog p { color:var(--muted); line-height:1.55; margin-bottom:16px; }
+    .dialog-scroll { overflow-y:auto; flex:1 1 auto; min-height:0; }
+    .dialog-actions { display:flex; gap:10px; flex-wrap:wrap; margin-top:24px; flex-shrink:0; }
+    .btn { min-height:44px; border:1px solid var(--line); background:transparent; color:var(--ink); font:inherit; padding:12px 16px; cursor:pointer; text-decoration:none; }
+    .btn.primary { background:var(--accent); border-color:var(--accent); color:var(--accent-ink); font-weight:500; }
+    .dialog a { color:inherit; text-decoration:underline; }
+    :focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
 
-    /* ── Focus ──────────────────────────────────────────────── */
-    .dialog a { color: inherit; text-decoration: underline; }
-    :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-
-    /* ── Responsive ─────────────────────────────────────────── */
-    @media (max-width: 760px) {
-      .bar { flex-direction: column; justify-content: center; gap: 18px; }
-      .brand { justify-content: center; width: 100%; flex: none; }
-      .logo { height: 20px; max-width: min(300px, 72vw); }
-      .tab-nav { justify-content: center; width: 100%; margin-left: 0; flex-wrap: nowrap; }
-      .tab-btn { flex: 1 1 0; min-width: 0; font-size: 11px; padding: 8px 6px; letter-spacing: .06em; }
-      .nav-btn .full { display: none; }
-      .hint { display: none; }
-      .card { padding: 34px 28px 32px; }
-      .card-info-button { top: 14px; right: 14px; }
+    /* ── Responsive ─────────────────────────────────────── */
+    @media (max-width:860px) { .plan-meta { display:none; } }
+    @media (max-width:760px) {
+      .bar { flex-direction:column; justify-content:center; gap:18px; }
+      .brand { justify-content:center; width:100%; flex:none; }
+      .logo { height:20px; max-width:min(300px,72vw); }
+      .tab-nav { justify-content:center; width:100%; margin-left:0; flex-wrap:nowrap; }
+      .tab-btn { flex:1 1 0; min-width:0; font-size:11px; padding:8px 6px; letter-spacing:.06em; }
+      .nav-btn .full { display:none; }
+      .hint { display:none; }
+      .card { padding:24px 28px 30px; border-radius:22px; }
+      .card-info-button { top:14px; right:14px; }
+      .gen-wall { stroke:rgba(215,239,255,.64); }
+      .gen-room { stroke:rgba(215,239,255,.46); }
+      .gen-road { stroke:rgba(215,239,255,.28); }
     }
     @media print { .bar, .controls, .hint { display: none !important; } }
     @media (prefers-reduced-motion: reduce) {
@@ -272,6 +283,31 @@
   </style>
 </head>
 <body>
+
+  <!-- Generativer Lageplan-Hintergrund (Rechner-Tab) -->
+  <svg id="planBg" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" hidden>
+    <defs>
+      <radialGradient id="lampGlow">
+        <stop offset="0%"   stop-color="#D7EFFF" stop-opacity=".72"/>
+        <stop offset="45%"  stop-color="#A9D9F4" stop-opacity=".2"/>
+        <stop offset="100%" stop-color="#D7EFFF" stop-opacity="0"/>
+      </radialGradient>
+    </defs>
+    <g id="plan"></g>
+  </svg>
+
+  <!-- Nordpfeil + Lageplan-Beschriftung -->
+  <div class="plan-meta" aria-hidden="true" hidden>
+    <div class="pm-north">
+      <span>N</span>
+      <svg width="20" height="34" viewBox="0 0 20 34" fill="none" stroke="currentColor" xmlns="http://www.w3.org/2000/svg">
+        <line x1="10" y1="32" x2="10" y2="9" stroke-width="1.1"/>
+        <path d="M10 3 L14 13 L10 10 L6 13 Z" fill="currentColor" stroke="none"/>
+      </svg>
+    </div>
+    <div class="pm-caption" id="pm-count">Lageplan · Wohnquartier</div>
+  </div>
+
 <div class="app">
 
   <!-- ── Header mit Tab-Navigation ─────────────────────────── -->
@@ -327,9 +363,51 @@
 
   <!-- ══ Honorarrechner ════════════════════════════════════════ -->
   <div id="rechner-view" role="tabpanel" hidden>
-    <iframe src="../rechner/index.html" id="rechner-frame"
-      style="flex:1 1 auto;min-height:0;width:100%;border:none;display:block"
-      title="Honorarrechner"></iframe>
+    <div class="content-wrap">
+      <main class="card" role="main">
+        <button class="card-info-button" type="button" id="openIntro" aria-label="Info zum Honorarrechner" title="Info zum Honorarrechner">
+          <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5"/><path d="M12 8h.01"/></svg>
+        </button>
+        <header class="header">
+          <h1 class="main-title">Honorarrechner</h1>
+        </header>
+        <div class="divider" role="separator"></div>
+        <section aria-label="Eingabe">
+          <p class="field-label">Projektbudget</p>
+          <div class="budget-display" aria-live="polite">
+            <span class="budget-val" id="budget-display">400</span>
+            <span class="budget-unit">Mio. €</span>
+          </div>
+          <div class="slider-wrap">
+            <input type="range" class="budget-slider" id="budget" min="0" max="1000"
+              aria-label="Projektbudget in Mio. Euro" aria-valuemin="1" aria-valuemax="1000">
+          </div>
+          <div class="slider-range-labels">
+            <span>1 Mio. €</span>
+            <span>1.000 Mio. €</span>
+          </div>
+          <p class="formula-line" id="formula-box"></p>
+        </section>
+        <section class="result-section" aria-label="Ergebnis">
+          <p class="field-label">Honorar</p>
+          <p class="result-pct" id="result-pct" aria-live="polite">—</p>
+          <p class="result-fee" id="result-fee"></p>
+        </section>
+      </main>
+    </div>
+    <div class="modal" id="introModal" role="dialog" aria-modal="true" aria-labelledby="introTitle" hidden>
+      <div class="dialog">
+        <div class="dialog-scroll">
+          <h2 id="introTitle">So funktioniert unser Preissystem</h2>
+          <p>Jede Projektidentität wird bei uns vollumfänglich entwickelt. Was das konkret beinhaltet, steht im <a href="https://www.studiolucin.de/profil" target="_blank" rel="noopener noreferrer">Unternehmensprofil</a> unter „Leistungen“, Seite 8.</p>
+          <p>Für die Vergütung haben wir eine eigene Formel entwickelt. Das Honorar setzt sich zusammen aus einer Basis von 12.000 € und wächst mit dem Projektbudget, wobei der prozentuale Anteil am Gesamtvolumen degressiv sinkt.</p>
+          <p>Ein Projekt mit doppeltem Budget bedeutet nicht doppelten Aufwand an Konzeption. Ein linear steigendes Vergütungsmodell würde diesen Unterschied ignorieren. Unsere Formel berücksichtigt ihn.</p>
+        </div>
+        <div class="dialog-actions">
+          <button class="btn primary" type="button" id="closeIntro">Verstanden</button>
+        </div>
+      </div>
+    </div>
   </div>
 
 </div><!-- /.app -->
@@ -380,6 +458,8 @@ const fileInput  = $('file');
 const downloadEl = $('download');
 const pdfView    = $('pdf-view');
 const rechnerView = $('rechner-view');
+const planBg      = document.getElementById('planBg');
+const planMeta    = document.querySelector('.plan-meta');
 
 /* ======================================================================
    ZUSTAND — pro Dokument
@@ -632,13 +712,17 @@ function switchTab(tabId, pushState = true) {
   if (pushState) history.pushState({ tab: tabId }, '', `/viewer/#${tabId}`);
 
   if (tabId === 'rechner') {
-    pdfView.hidden    = true;
+    pdfView.hidden     = true;
     rechnerView.hidden = false;
+    if (planBg)   planBg.hidden   = false;
+    if (planMeta) planMeta.hidden = false;
     return;
   }
 
   /* PDF-Tab */
   rechnerView.hidden = true;
+  if (planBg)   planBg.hidden   = true;
+  if (planMeta) planMeta.hidden = true;
   pdfView.hidden     = false;
 
   /* Download-Button zurücksetzen */
@@ -739,6 +823,366 @@ function tabFromHash() {
   /* Das andere PDF im Hintergrund vorladen */
   const otherTab = initialTab === 'portfolio' ? 'profil' : 'portfolio';
   setTimeout(() => loadFromUrl(otherTab), 500);
+})();
+
+/* ======================================================================
+   HONORARRECHNER-LOGIK
+   ====================================================================== */
+(function () {
+
+  /* ── localStorage guard ───────────────────────────────── */
+  function lsGet(k) { try { return localStorage.getItem(k); } catch(e) { return null; } }
+  function lsSet(k, v) { try { localStorage.setItem(k, v); } catch(e) {} }
+
+  /* ── Intro modal ─────────────────────────────────────── */
+  const INTRO_KEY  = 'sl_rechner_seen';
+  const introModal = document.getElementById('introModal');
+  const openIntro  = document.getElementById('openIntro');
+  const closeIntro = document.getElementById('closeIntro');
+  function showIntro() { introModal.hidden = false; closeIntro.focus(); }
+  function hideIntro() { introModal.hidden = true;  openIntro.focus(); }
+  openIntro.addEventListener('click', showIntro);
+  closeIntro.addEventListener('click', () => { lsSet(INTRO_KEY, '1'); hideIntro(); });
+  introModal.addEventListener('click', e => { if (e.target === introModal) { lsSet(INTRO_KEY, '1'); hideIntro(); } });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && !introModal.hidden) { lsSet(INTRO_KEY, '1'); hideIntro(); } });
+
+  /* ── Slider / Calculator ─────────────────────────────── */
+  const slider    = document.getElementById('budget');
+  const displayEl = document.getElementById('budget-display');
+  const pctEl     = document.getElementById('result-pct');
+  const feeEl     = document.getElementById('result-fee');
+  const formulaEl = document.getElementById('formula-box');
+
+  const B_MAX = 1000;
+  function sliderToValue(s) { return 1 + s / 1000 * (B_MAX - 1); }
+  function valueToSlider(v) { return Math.round((v - 1) / (B_MAX - 1) * 1000); }
+  function fmtBudget(b) {
+    if (b >= 10) return Math.round(b).toLocaleString('de-DE');
+    return b.toLocaleString('de-DE', { maximumFractionDigits: 1 });
+  }
+  function fmtEuro(n) { return n.toLocaleString('de-DE', { minimumFractionDigits:0, maximumFractionDigits:0 }) + ' €'; }
+  function fmtPct(p) {
+    const d = p >= 1 ? 2 : 3;
+    return p.toLocaleString('de-DE', { minimumFractionDigits:d, maximumFractionDigits:d }) + ' %';
+  }
+  function fmtB(b) {
+    return b % 1 === 0 ? b.toLocaleString('de-DE') : b.toLocaleString('de-DE', { maximumFractionDigits:2 });
+  }
+
+  let currentB = 400;
+
+  function calculate() {
+    const B = currentB;
+    const honorar = Math.round(12000 * Math.pow(B, 0.35));
+    const pct     = 1.2 * Math.pow(B, -0.65);
+    pctEl.textContent = fmtEuro(honorar); pctEl.classList.remove('dim');
+    feeEl.textContent = 'entspricht ' + fmtPct(pct); feeEl.classList.remove('dim');
+    formulaEl.innerHTML =
+      'H = 12.000 × <strong>' + fmtB(B) +
+      '<sup style="font-size:0.7em">0,35</sup></strong> = <strong>' +
+      fmtEuro(honorar) + '</strong>';
+    formulaEl.classList.remove('dim');
+    renderPlan(houseCount(B), true);
+  }
+
+  function updateSlider() {
+    const s = parseInt(slider.value, 10);
+    currentB = sliderToValue(s);
+    slider.style.setProperty('--fill', (s / 10) + '%');
+    displayEl.textContent = fmtBudget(currentB);
+    slider.setAttribute('aria-valuenow', Math.round(currentB));
+    calculate();
+  }
+
+  /* ── Generativer Lageplan ────────────────────────────── */
+  const planBgEl = document.getElementById('planBg');
+  const plan     = document.getElementById('plan');
+  const pmCount  = document.getElementById('pm-count');
+  const barEl    = document.querySelector('.bar');
+  const M = 22;
+  let stKey = '';
+  const renderedKeys = new Set();
+  const rectMap      = new Map();
+  const svgns = 'http://www.w3.org/2000/svg';
+
+  slider.value = valueToSlider(400);
+  updateSlider();
+  slider.addEventListener('input', updateSlider);
+
+  function houseCount(B) { return Math.max(1, Math.min(28, Math.ceil(B / 35))); }
+  function r1(n) { return Math.round(n * 10) / 10; }
+  function clampV(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+
+  function mulberry32(a) {
+    return function () {
+      a |= 0; a = a + 0x6D2B79F5 | 0;
+      let t = Math.imul(a ^ a >>> 15, 1 | a);
+      t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    };
+  }
+
+  function massPath(x, y, w, h, rnd) {
+    const t = rnd(), mn = Math.min(w, h);
+    if (t < 0.18 && mn > 64) {
+      const ix = x + w * 0.3, iy = y + h * 0.3, iw = w * 0.4, ih = h * 0.4;
+      return { d:`M${r1(x)} ${r1(y)} H${r1(x+w)} V${r1(y+h)} H${r1(x)} Z M${r1(ix)} ${r1(iy)} H${r1(ix+iw)} V${r1(iy+ih)} H${r1(ix)} Z`, hole:true, type:'court', court:{ix,iy,iw,ih} };
+    }
+    if (t < 0.4 && mn > 46) {
+      const corner = Math.floor(rnd() * 4);
+      const nw = w * (0.34 + 0.14 * rnd()), nh = h * (0.34 + 0.14 * rnd());
+      let d;
+      if (corner === 0) d = `M${r1(x+nw)} ${r1(y)} H${r1(x+w)} V${r1(y+h)} H${r1(x)} V${r1(y+nh)} H${r1(x+nw)} Z`;
+      else if (corner === 1) d = `M${r1(x)} ${r1(y)} H${r1(x+w-nw)} V${r1(y+nh)} H${r1(x+w)} V${r1(y+h)} H${r1(x)} Z`;
+      else if (corner === 2) d = `M${r1(x)} ${r1(y)} H${r1(x+w)} V${r1(y+h-nh)} H${r1(x+w-nw)} V${r1(y+h)} H${r1(x)} Z`;
+      else d = `M${r1(x)} ${r1(y)} H${r1(x+w)} V${r1(y+h)} H${r1(x+nw)} V${r1(y+h-nh)} H${r1(x)} Z`;
+      return { d, hole:false, type:'L', corner, Lnw:nw, Lnh:nh };
+    }
+    return { d:`M${r1(x)} ${r1(y)} H${r1(x+w)} V${r1(y+h)} H${r1(x)} Z`, hole:false, type:'rect' };
+  }
+
+  function bspRooms(x, y, w, h, depth, maxDepth, rnd) {
+    const MIN_SIZE = 26, DOOR_PX = 16;
+    if (depth >= maxDepth || w < MIN_SIZE * 2 || h < MIN_SIZE * 2) return [];
+    const segs = [];
+    const splitH = (w / h > 1.4) ? false : (h / w > 1.4) ? true : rnd() < 0.5;
+    if (splitH) {
+      const sy = y + h * (0.32 + rnd() * 0.36);
+      const doorX = x + w * (0.25 + rnd() * 0.5);
+      segs.push([r1(x), r1(sy), r1(doorX), r1(sy)]);
+      segs.push([r1(doorX + DOOR_PX), r1(sy), r1(x + w), r1(sy)]);
+      segs.push(...bspRooms(x, y,  w, sy - y,     depth + 1, maxDepth, rnd));
+      segs.push(...bspRooms(x, sy, w, y + h - sy, depth + 1, maxDepth, rnd));
+    } else {
+      const sx = x + w * (0.32 + rnd() * 0.36);
+      const doorY = y + h * (0.25 + rnd() * 0.5);
+      segs.push([r1(sx), r1(y), r1(sx), r1(doorY)]);
+      segs.push([r1(sx), r1(doorY + DOOR_PX), r1(sx), r1(y + h)]);
+      segs.push(...bspRooms(x,  y, sx - x,     h, depth + 1, maxDepth, rnd));
+      segs.push(...bspRooms(sx, y, x + w - sx, h, depth + 1, maxDepth, rnd));
+    }
+    return segs;
+  }
+
+  function bspDepth(B) {
+    if (B <  4) return 1;
+    if (B < 15) return 2;
+    if (B < 60) return 3;
+    return 4;
+  }
+
+  function lRooms(x, y, w, h, corner, nw, nh, maxDepth, rnd) {
+    const DOOR = 16;
+    const segs = [];
+    function vwall(sx, y1, y2) {
+      if (y2 - y1 < DOOR * 2 + 8) return;
+      const dY = y1 + (y2 - y1) * (0.25 + rnd() * 0.5);
+      segs.push([r1(sx), r1(y1), r1(sx), r1(dY)]);
+      segs.push([r1(sx), r1(dY + DOOR), r1(sx), r1(y2)]);
+    }
+    const armOnRight = corner === 0 || corner === 3;
+    const armX = armOnRight ? x + nw : x;
+    const armW = w - nw;
+    const sx = armX + armW * (0.35 + rnd() * 0.30);
+    vwall(sx, y, y + h);
+    if (maxDepth >= 2 && nw > 50) {
+      const bodyX = armOnRight ? x : x + w - nw;
+      const bodyY1 = (corner === 0 || corner === 1) ? y + nh : y;
+      const bodyY2 = (corner === 0 || corner === 1) ? y + h  : y + h - nh;
+      const sx2 = bodyX + nw * (0.35 + rnd() * 0.30);
+      vwall(sx2, bodyY1, bodyY2);
+    }
+    return segs;
+  }
+
+  function courtRooms(x, y, w, h, court, maxDepth, rnd) {
+    const d = Math.min(maxDepth, 1);
+    const {ix, iy, iw, ih} = court;
+    return [
+      [x, y, w, iy - y],
+      [x, iy + ih, w, y + h - (iy + ih)]
+    ].flatMap(([rx, ry, rw, rh]) => bspRooms(rx, ry, rw, rh, 0, d, rnd));
+  }
+
+  function buildLayout(N, gl, gt, gw, gh, isEx) {
+    const ratio = gw / gh;
+    let C = 1, R = 1, cw = gw, ch = gh;
+    for (R = 1; R <= 8; R++) {
+      C = clampV(Math.round(R * ratio), Math.max(1, R - 1), 18);
+      cw = gw / C; ch = gh / R;
+      let cap = 0;
+      for (let i = 0; i < C; i++) for (let j = 0; j < R; j++) {
+        const cx = gl + i * cw + cw / 2, cy = gt + j * ch + ch / 2;
+        if (!isEx(cx, cy)) cap++;
+      }
+      if (cap >= N) break;
+    }
+    const cc = (C-1)/2, rc = (R-1)/2, rings = {};
+    for (let i = 0; i < C; i++) for (let j = 0; j < R; j++) {
+      const cx = gl + i*cw + cw/2, cy = gt + j*ch + ch/2;
+      if (isEx(cx, cy)) continue;
+      const ring = Math.max(Math.abs(i-cc), Math.abs(j-rc));
+      const ang  = Math.atan2(j-rc, i-cc);
+      (rings[ring] = rings[ring] || []).push({ i, j, ring, ang });
+    }
+    const keys = Object.keys(rings).map(Number).sort((a,b) => a-b);
+    const out = []; let need = N;
+    for (const k of keys) {
+      const cs = rings[k].sort((a,b) => a.ang - b.ang);
+      if (need >= cs.length) { for (const c of cs) out.push(c); need -= cs.length; }
+      else { const step = cs.length/need; for (let m = 0; m < need; m++) out.push(cs[Math.floor(m*step)]); need = 0; }
+      if (need <= 0) break;
+    }
+    return { cells:out, C, R, cw, ch, gl, gt };
+  }
+
+  function ensureGroups() {
+    let b = document.getElementById('plan-build'), inf = document.getElementById('plan-infra');
+    if (!b)   { b   = document.createElementNS(svgns,'g'); b.id   = 'plan-build'; plan.appendChild(b);   }
+    if (!inf) { inf = document.createElementNS(svgns,'g'); inf.id = 'plan-infra'; plan.appendChild(inf); }
+    return { b, inf };
+  }
+  function appendSVG(parent, str) {
+    const tmp = document.createElementNS(svgns,'g');
+    tmp.innerHTML = str;
+    while (tmp.firstChild) parent.appendChild(tmp.firstChild);
+  }
+
+  function cellRender(c, gl, gt, cw, ch, baseRing, N) {
+    const cellX = gl + c.i * cw, cellY = gt + c.j * ch;
+    const gutFactor = Math.max(0.07, 0.19 * (1 - 0.6 * Math.min(1, ((N||1) - 1) / 25)));
+    const gut = Math.min(cw, ch) * gutFactor;
+    const bx = cellX+gut, by = cellY+gut, bw = cw-2*gut, bh = ch-2*gut;
+    const rnd = mulberry32(((c.i+1)*73856093) ^ ((c.j+1)*19349663));
+    const w = bw*(0.82+0.18*rnd()), h = bh*(0.82+0.18*rnd());
+    const x = bx+(bw-w)*rnd(), y = by+(bh-h)*rnd();
+    const m = massPath(x, y, w, h, rnd);
+    const delay = Math.min(0.5, Math.max(0, c.ring-baseRing)*0.06).toFixed(2);
+    const d2 = (+delay+0.18).toFixed(2);
+    const fr = m.hole ? ' fill-rule="evenodd"' : '';
+    let s = `<path class="gen-floor"${fr} style="animation-delay:${delay}s" d="${m.d}"/>`
+          + `<path class="gen-wall" pathLength="1" style="animation-delay:${delay}s" d="${m.d}"/>`;
+    const maxDepth = bspDepth(currentB);
+    let rooms = [];
+    if (m.type === 'rect')       rooms = bspRooms(x, y, w, h, 0, maxDepth, rnd);
+    else if (m.type === 'L')     rooms = lRooms(x, y, w, h, m.corner, m.Lnw, m.Lnh, maxDepth, rnd);
+    else if (m.type === 'court') rooms = courtRooms(x, y, w, h, m.court, maxDepth, rnd);
+    rooms.forEach(seg =>
+      s += `<line class="gen-room" style="animation-delay:${d2}s" x1="${seg[0]}" y1="${seg[1]}" x2="${seg[2]}" y2="${seg[3]}"/>`);
+    return { str:`<g class="b-grp" data-k="${c.i}_${c.j}">${s}</g>`, rect:{x,y,w,h} };
+  }
+
+  function buildInfra(infraG, occ, rects, C, R, roadW, dotR, glowR, off, animate) {
+    let rd = ''; const ways = []; const hw = roadW / 2;
+    function connect(A, B, horizontal) {
+      if (!A || !B) return;
+      if (horizontal) {
+        const top = Math.max(A.y, B.y), bot = Math.min(A.y+A.h, B.y+B.h);
+        const ax = r1(A.x+A.w), bx = r1(B.x);
+        if (bot-top > roadW+8) {
+          const yy = (top+bot)/2;
+          rd += `M${ax} ${r1(yy-hw)} L${bx} ${r1(yy-hw)} M${ax} ${r1(yy+hw)} L${bx} ${r1(yy+hw)} `;
+          ways.push({ t:'h', x1:ax, x2:bx, y:r1(yy) });
+        } else {
+          const ay = r1(A.y+A.h/2), by2 = r1(B.y+B.h/2), mx = r1((ax+bx)/2);
+          rd += `M${ax} ${ay} L${mx} ${ay} L${mx} ${by2} L${bx} ${by2} `;
+          ways.push({ t:'p', x:mx, y:r1((ay+by2)/2), h:false });
+        }
+      } else {
+        const left = Math.max(A.x, B.x), right = Math.min(A.x+A.w, B.x+B.w);
+        const ay = r1(A.y+A.h), by2 = r1(B.y);
+        if (right-left > roadW+8) {
+          const xx = (left+right)/2;
+          rd += `M${r1(xx-hw)} ${ay} L${r1(xx-hw)} ${by2} M${r1(xx+hw)} ${ay} L${r1(xx+hw)} ${by2} `;
+          ways.push({ t:'v', y1:ay, y2:by2, x:r1(xx) });
+        } else {
+          const ax = r1(A.x+A.w/2), bx2 = r1(B.x+B.w/2), my = r1((ay+by2)/2);
+          rd += `M${ax} ${ay} L${ax} ${my} L${bx2} ${my} L${bx2} ${by2} `;
+          ways.push({ t:'p', x:r1((ax+bx2)/2), y:my, h:true });
+        }
+      }
+    }
+    for (let i = 0; i < C; i++) for (let j = 0; j < R; j++) {
+      const k = i+'_'+j;
+      if (!occ.has(k)) continue;
+      if (occ.has((i+1)+'_'+j)) connect(rects.get(k), rects.get((i+1)+'_'+j), true);
+      if (occ.has(i+'_'+(j+1))) connect(rects.get(k), rects.get(i+'_'+(j+1)), false);
+    }
+    const naR = animate ? '' : ';animation:none;stroke-dashoffset:0';
+    const naL = animate ? '' : ';animation:none;opacity:1';
+    let s = '';
+    if (rd) s += `<path class="gen-road" pathLength="1" style="animation-delay:.4s${naR}" d="${rd.trim()}"/>`;
+    let li = 0; const ts = [0.3, 0.7];
+    function lamp(px, py) {
+      const pd = (li++ % 6) * 0.6;
+      s += `<g class="gen-lamp" style="animation-delay:.55s${naL}">`
+         + `<circle class="l-glow" style="animation-delay:${pd.toFixed(1)}s" cx="${r1(px)}" cy="${r1(py)}" r="${r1(glowR)}" fill="url(#lampGlow)"/>`
+         + `<circle class="l-dot" cx="${r1(px)}" cy="${r1(py)}" r="${r1(dotR)}"/></g>`;
+    }
+    ways.forEach(wy => {
+      if (wy.t === 'h')      { ts.forEach(tt => { const lx = wy.x1+(wy.x2-wy.x1)*tt; lamp(lx, wy.y-off); lamp(lx, wy.y+off); }); }
+      else if (wy.t === 'v') { ts.forEach(tt => { const ly = wy.y1+(wy.y2-wy.y1)*tt; lamp(wy.x-off, ly); lamp(wy.x+off, ly); }); }
+      else { if (wy.h) { lamp(wy.x, wy.y-off); lamp(wy.x, wy.y+off); } else { lamp(wy.x-off, wy.y); lamp(wy.x+off, wy.y); } }
+    });
+    infraG.innerHTML = s;
+  }
+
+  function renderPlan(N, valid) {
+    const groups = ensureGroups(), buildG = groups.b, infraG = groups.inf;
+    const W = planBgEl.clientWidth  || window.innerWidth;
+    const H = planBgEl.clientHeight || window.innerHeight;
+    if (!valid || N <= 0) {
+      buildG.innerHTML = ''; infraG.innerHTML = '';
+      renderedKeys.clear(); rectMap.clear(); stKey = '';
+      if (pmCount) pmCount.textContent = 'Lageplan · Wohnquartier';
+      return;
+    }
+    const headerBottom = barEl ? barEl.getBoundingClientRect().bottom : H * 0.1;
+    const gl = M, gt = headerBottom + 12, gw = W - 2*M, gh = (H-M) - gt;
+    if (gw < 80 || gh < 80) {
+      buildG.innerHTML = ''; infraG.innerHTML = '';
+      renderedKeys.clear(); rectMap.clear(); stKey = '';
+      return;
+    }
+    const lay = buildLayout(N, gl, gt, gw, gh, () => false);
+    const { C, R, cw, ch, cells } = lay;
+    const gridSig = C+'x'+R+':'+r1(gl)+':'+r1(gt)+':'+r1(cw)+':'+r1(ch);
+    const fullRebuild = (gridSig !== stKey);
+    const roadW = clampV(cw*0.05, 5, 9), dotR = clampV(cw*0.012, 1.2, 1.9),
+          glowR = clampV(cw*0.05, 3.5, 6.5), off = roadW*0.5+dotR+2;
+    const target = new Set(cells.map(c => c.i+'_'+c.j));
+    let changed = fullRebuild;
+    if (fullRebuild) {
+      buildG.innerHTML = ''; renderedKeys.clear(); rectMap.clear();
+      let s = '';
+      cells.forEach(c => { const r = cellRender(c, gl, gt, cw, ch, 0, N); s += r.str; rectMap.set(c.i+'_'+c.j, r.rect); renderedKeys.add(c.i+'_'+c.j); });
+      buildG.innerHTML = s; stKey = gridSig;
+    } else {
+      let removed = 0;
+      Array.from(renderedKeys).forEach(k => {
+        if (!target.has(k)) { const el = buildG.querySelector('[data-k="'+k+'"]'); if (el) el.remove(); renderedKeys.delete(k); rectMap.delete(k); removed++; }
+      });
+      const fresh = cells.filter(c => !renderedKeys.has(c.i+'_'+c.j));
+      let baseRing = Infinity;
+      fresh.forEach(c => { if (c.ring < baseRing) baseRing = c.ring; });
+      if (!isFinite(baseRing)) baseRing = 0;
+      let s = '';
+      fresh.forEach(c => { const r = cellRender(c, gl, gt, cw, ch, baseRing, N); s += r.str; rectMap.set(c.i+'_'+c.j, r.rect); renderedKeys.add(c.i+'_'+c.j); });
+      if (s) appendSVG(buildG, s);
+      changed = (removed > 0 || fresh.length > 0);
+    }
+    if (changed) buildInfra(infraG, target, rectMap, C, R, roadW, dotR, glowR, off, fullRebuild);
+    if (pmCount) pmCount.textContent = 'Lageplan · ' + N + ' Baukörper';
+  }
+
+  /* Neu zeichnen bei Größenänderung */
+  let rzT;
+  window.addEventListener('resize', () => {
+    clearTimeout(rzT);
+    rzT = setTimeout(() => { stKey = ''; calculate(); }, 140);
+  });
+  setTimeout(() => { stKey = ''; calculate(); }, 400);
+
 })();
 </script>
 </body>
