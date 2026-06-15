@@ -247,7 +247,7 @@
           </div>
           <div class="slider-range-labels">
             <span>1 Mio. €</span>
-            <span>2.000 Mio. €</span>
+            <span>1.000 Mio. €</span>
           </div>
           <p class="formula-line" id="formula-box"></p>
         </section>
@@ -304,10 +304,10 @@
     const feeEl     = document.getElementById('result-fee');
     const formulaEl = document.getElementById('formula-box');
 
-    const B_MAX = 2000;
+    const B_MAX = 1000;
 
-    function sliderToValue(s) { return Math.exp(s / 1000 * Math.log(B_MAX)); }
-    function valueToSlider(v) { return Math.round(Math.log(v) / Math.log(B_MAX) * 1000); }
+    function sliderToValue(s) { return 1 + s / 1000 * (B_MAX - 1); }
+    function valueToSlider(v) { return Math.round((v - 1) / (B_MAX - 1) * 1000); }
 
     function fmtBudget(b) {
       if (b >= 10) return Math.round(b).toLocaleString('de-DE');
@@ -363,8 +363,7 @@
     slider.addEventListener('input', updateSlider);
 
     function houseCount(B) {
-      const n = Math.round(4.60816 * Math.log(B) - 7.6107);
-      return Math.max(2, Math.min(28, n));
+      return Math.max(1, Math.min(28, Math.ceil(B / 35)));
     }
     function r1(n) { return Math.round(n * 10) / 10; }
     function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
@@ -382,7 +381,7 @@
       const t = rnd(), mn = Math.min(w, h);
       if (t < 0.18 && mn > 64) {
         const ix = x + w * 0.3, iy = y + h * 0.3, iw = w * 0.4, ih = h * 0.4;
-        return { d:`M${r1(x)} ${r1(y)} H${r1(x+w)} V${r1(y+h)} H${r1(x)} Z M${r1(ix)} ${r1(iy)} H${r1(ix+iw)} V${r1(iy+ih)} H${r1(ix)} Z`, hole:true, type:'court' };
+        return { d:`M${r1(x)} ${r1(y)} H${r1(x+w)} V${r1(y+h)} H${r1(x)} Z M${r1(ix)} ${r1(iy)} H${r1(ix+iw)} V${r1(iy+ih)} H${r1(ix)} Z`, hole:true, type:'court', court:{ix,iy,iw,ih} };
       }
       if (t < 0.4 && mn > 46) {
         const corner = Math.floor(rnd() * 4);
@@ -392,37 +391,88 @@
         else if (corner === 1) d = `M${r1(x)} ${r1(y)} H${r1(x+w-nw)} V${r1(y+nh)} H${r1(x+w)} V${r1(y+h)} H${r1(x)} Z`;
         else if (corner === 2) d = `M${r1(x)} ${r1(y)} H${r1(x+w)} V${r1(y+h-nh)} H${r1(x+w-nw)} V${r1(y+h)} H${r1(x)} Z`;
         else d = `M${r1(x)} ${r1(y)} H${r1(x+w)} V${r1(y+h)} H${r1(x+nw)} V${r1(y+h-nh)} H${r1(x)} Z`;
-        return { d, hole:false, type:'L' };
+        return { d, hole:false, type:'L', corner, Lnw:nw, Lnh:nh };
       }
       return { d:`M${r1(x)} ${r1(y)} H${r1(x+w)} V${r1(y+h)} H${r1(x)} Z`, hole:false, type:'rect' };
     }
 
-    function roomSegs(x, y, w, h, type, rnd) {
-      if (type !== 'rect') return [];
-      const segs = [], gf = 0.26;
-      function wall(x1, y1, x2, y2) {
-        const pos = clamp(0.5 + (rnd() - 0.5) * 0.9, 0.22, 0.78);
-        const t0 = pos - gf / 2, t1 = pos + gf / 2;
-        segs.push([r1(x1), r1(y1), r1(x1+(x2-x1)*t0), r1(y1+(y2-y1)*t0)]);
-        segs.push([r1(x1+(x2-x1)*t1), r1(y1+(y2-y1)*t1), r1(x2), r1(y2)]);
+    function bspRooms(x, y, w, h, depth, maxDepth, rnd) {
+      const MIN_SIZE = 26;
+      const DOOR_PX = 16;
+      if (depth >= maxDepth || w < MIN_SIZE * 2 || h < MIN_SIZE * 2) return [];
+      const segs = [];
+      const splitH = (w / h > 1.4) ? false : (h / w > 1.4) ? true : rnd() < 0.5;
+      if (splitH) {
+        const sy = y + h * (0.32 + rnd() * 0.36);
+        const doorX = x + w * (0.25 + rnd() * 0.5);
+        segs.push([r1(x), r1(sy), r1(doorX), r1(sy)]);
+        segs.push([r1(doorX + DOOR_PX), r1(sy), r1(x + w), r1(sy)]);
+        segs.push(...bspRooms(x, y,  w, sy - y,     depth + 1, maxDepth, rnd));
+        segs.push(...bspRooms(x, sy, w, y + h - sy, depth + 1, maxDepth, rnd));
+      } else {
+        const sx = x + w * (0.32 + rnd() * 0.36);
+        const doorY = y + h * (0.25 + rnd() * 0.5);
+        segs.push([r1(sx), r1(y), r1(sx), r1(doorY)]);
+        segs.push([r1(sx), r1(doorY + DOOR_PX), r1(sx), r1(y + h)]);
+        segs.push(...bspRooms(x,  y, sx - x,     h, depth + 1, maxDepth, rnd));
+        segs.push(...bspRooms(sx, y, x + w - sx, h, depth + 1, maxDepth, rnd));
       }
-      const nv = w > 150 ? 2 : w > 78 ? 1 : 0;
-      const nh = h > 150 ? 2 : h > 78 ? 1 : 0;
-      const vs = [], hs = [];
-      if (nv >= 1) vs.push(x + w * (0.32 + 0.18 * rnd()));
-      if (nv >= 2) vs.push(x + w * (0.62 + 0.16 * rnd()));
-      if (nh >= 1) hs.push(y + h * (0.32 + 0.18 * rnd()));
-      if (nh >= 2) hs.push(y + h * (0.62 + 0.16 * rnd()));
-      vs.forEach(sx => wall(sx, y, sx, y+h));
-      hs.forEach(sy => wall(x, sy, x+w, sy));
       return segs;
+    }
+
+    function bspDepth(B) {
+      if (B <  4) return 1;
+      if (B < 15) return 2;
+      if (B < 60) return 3;
+      return 4;
+    }
+
+    function lRooms(x, y, w, h, corner, nw, nh, maxDepth, rnd) {
+      const DOOR = 16;
+      const segs = [];
+
+      function vwall(sx, y1, y2) {
+        if (y2 - y1 < DOOR * 2 + 8) return;
+        const dY = y1 + (y2 - y1) * (0.25 + rnd() * 0.5);
+        segs.push([r1(sx), r1(y1), r1(sx), r1(dY)]);
+        segs.push([r1(sx), r1(dY + DOOR), r1(sx), r1(y2)]);
+      }
+
+      // Corners 0,3: arm on right side (x+nw to x+w); 1,2: arm on left side (x to x+w-nw)
+      const armOnRight = corner === 0 || corner === 3;
+      const armX = armOnRight ? x + nw : x;
+      const armW = w - nw;
+
+      // Primary wall: full L-height vertical, within arm x-range so it stays inside the shape
+      const sx = armX + armW * (0.35 + rnd() * 0.30);
+      vwall(sx, y, y + h);
+
+      // Secondary wall in body-only zone at higher budgets
+      if (maxDepth >= 2 && nw > 50) {
+        const bodyX = armOnRight ? x : x + w - nw;
+        const bodyY1 = (corner === 0 || corner === 1) ? y + nh : y;
+        const bodyY2 = (corner === 0 || corner === 1) ? y + h  : y + h - nh;
+        const sx2 = bodyX + nw * (0.35 + rnd() * 0.30);
+        vwall(sx2, bodyY1, bodyY2);
+      }
+
+      return segs;
+    }
+
+    function courtRooms(x, y, w, h, court, maxDepth, rnd) {
+      const d = Math.min(maxDepth, 1);
+      const {ix, iy, iw, ih} = court;
+      return [
+        [x, y, w, iy - y],
+        [x, iy + ih, w, y + h - (iy + ih)]
+      ].flatMap(([rx, ry, rw, rh]) => bspRooms(rx, ry, rw, rh, 0, d, rnd));
     }
 
     function buildLayout(N, gl, gt, gw, gh, isEx) {
       const ratio = gw / gh;
-      let C = 3, R = 2, cw = gw, ch = gh;
-      for (R = 2; R <= 8; R++) {
-        C = clamp(Math.round(R * ratio), 3, 18);
+      let C = 1, R = 1, cw = gw, ch = gh;
+      for (R = 1; R <= 8; R++) {
+        C = clamp(Math.round(R * ratio), Math.max(1, R - 1), 18);
         cw = gw / C; ch = gh / R;
         let cap = 0;
         for (let i = 0; i < C; i++) for (let j = 0; j < R; j++) {
@@ -462,9 +512,10 @@
       while (tmp.firstChild) parent.appendChild(tmp.firstChild);
     }
 
-    function cellRender(c, gl, gt, cw, ch, baseRing) {
+    function cellRender(c, gl, gt, cw, ch, baseRing, N) {
       const cellX = gl + c.i * cw, cellY = gt + c.j * ch;
-      const gut = Math.min(cw, ch) * 0.19;
+      const gutFactor = Math.max(0.07, 0.19 * (1 - 0.6 * Math.min(1, ((N||1) - 1) / 25)));
+      const gut = Math.min(cw, ch) * gutFactor;
       const bx = cellX+gut, by = cellY+gut, bw = cw-2*gut, bh = ch-2*gut;
       const rnd = mulberry32(((c.i+1)*73856093) ^ ((c.j+1)*19349663));
       const w = bw*(0.82+0.18*rnd()), h = bh*(0.82+0.18*rnd());
@@ -475,7 +526,12 @@
       const fr = m.hole ? ' fill-rule="evenodd"' : '';
       let s = `<path class="gen-floor"${fr} style="animation-delay:${delay}s" d="${m.d}"/>`
             + `<path class="gen-wall" pathLength="1" style="animation-delay:${delay}s" d="${m.d}"/>`;
-      roomSegs(x, y, w, h, m.type, rnd).forEach(seg =>
+      const maxDepth = bspDepth(currentB);
+      let rooms = [];
+      if (m.type === 'rect')       rooms = bspRooms(x, y, w, h, 0, maxDepth, rnd);
+      else if (m.type === 'L')     rooms = lRooms(x, y, w, h, m.corner, m.Lnw, m.Lnh, maxDepth, rnd);
+      else if (m.type === 'court') rooms = courtRooms(x, y, w, h, m.court, maxDepth, rnd);
+      rooms.forEach(seg =>
         s += `<line class="gen-room" style="animation-delay:${d2}s" x1="${seg[0]}" y1="${seg[1]}" x2="${seg[2]}" y2="${seg[3]}"/>`);
       return { str:`<g class="b-grp" data-k="${c.i}_${c.j}">${s}</g>`, rect:{x,y,w,h} };
     }
@@ -563,7 +619,7 @@
       if (fullRebuild) {
         buildG.innerHTML = ''; renderedKeys.clear(); rectMap.clear();
         let s = '';
-        cells.forEach(c => { const r = cellRender(c, gl, gt, cw, ch, 0); s += r.str; rectMap.set(c.i+'_'+c.j, r.rect); renderedKeys.add(c.i+'_'+c.j); });
+        cells.forEach(c => { const r = cellRender(c, gl, gt, cw, ch, 0, N); s += r.str; rectMap.set(c.i+'_'+c.j, r.rect); renderedKeys.add(c.i+'_'+c.j); });
         buildG.innerHTML = s; stKey = gridSig;
       } else {
         let removed = 0;
@@ -575,7 +631,7 @@
         fresh.forEach(c => { if (c.ring < baseRing) baseRing = c.ring; });
         if (!isFinite(baseRing)) baseRing = 0;
         let s = '';
-        fresh.forEach(c => { const r = cellRender(c, gl, gt, cw, ch, baseRing); s += r.str; rectMap.set(c.i+'_'+c.j, r.rect); renderedKeys.add(c.i+'_'+c.j); });
+        fresh.forEach(c => { const r = cellRender(c, gl, gt, cw, ch, baseRing, N); s += r.str; rectMap.set(c.i+'_'+c.j, r.rect); renderedKeys.add(c.i+'_'+c.j); });
         if (s) appendSVG(buildG, s);
         changed = (removed > 0 || fresh.length > 0);
       }
