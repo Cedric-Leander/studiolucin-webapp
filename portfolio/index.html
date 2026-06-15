@@ -382,16 +382,17 @@
       const scale = Math.min(availW / base.width, availH / base.height);
       const dpr = window.devicePixelRatio || 1;
       const vp = page.getViewport({ scale: scale * dpr });
-      return { vp, cssW: Math.floor(vp.width / dpr), cssH: Math.floor(vp.height / dpr) };
+      const physW = Math.round(vp.width), physH = Math.round(vp.height);
+      return { vp, physW, physH, cssW: physW / dpr, cssH: physH / dpr };
     }
 
     async function preloadPage(num) {
       if (!pdfDoc || num < 1 || num > total || pageCache.has(num)) return;
       try {
         const page = await pdfDoc.getPage(num);
-        const { vp, cssW, cssH } = calcViewport(page);
+        const { vp, physW, physH, cssW, cssH } = calcViewport(page);
         const c = document.createElement("canvas");
-        c.width = Math.floor(vp.width); c.height = Math.floor(vp.height);
+        c.width = physW; c.height = physH;
         await page.render({ canvasContext: c.getContext("2d"), viewport: vp }).promise;
         if (!pageCache.has(num)) {
           pageCache.set(num, { canvas: c, cssW, cssH });
@@ -424,10 +425,10 @@
 
       canvas.classList.remove("ready");
       const page = await pdfDoc.getPage(num);
-      const { vp, cssW, cssH } = calcViewport(page);
+      const { vp, physW, physH, cssW, cssH } = calcViewport(page);
 
-      canvas.width = Math.floor(vp.width);
-      canvas.height = Math.floor(vp.height);
+      canvas.width = physW;
+      canvas.height = physH;
       canvas.style.width = cssW + "px";
       canvas.style.height = cssH + "px";
 
