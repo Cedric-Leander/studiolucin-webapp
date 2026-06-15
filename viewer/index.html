@@ -716,6 +716,8 @@ function switchTab(tabId, pushState = true) {
     rechnerView.hidden = false;
     if (planBg)   planBg.hidden   = false;
     if (planMeta) planMeta.hidden = false;
+    // SVG war versteckt (display:none) → Animationen neu starten
+    setTimeout(() => window.dispatchEvent(new Event('resize')), 0);
     return;
   }
 
